@@ -16,6 +16,17 @@ export function Sidebar() {
       </div>
       <nav class="flex-1 space-y-2">
         <a 
+          href="/checkin" 
+          class={`flex items-center gap-3 py-3 px-4 transition-colors cursor-pointer text-decoration-none ${
+            url === '/checkin'
+              ? 'text-secondary font-bold border-r-4 border-secondary bg-surface-container' 
+              : 'text-on-surface-variant hover:bg-surface-container'
+          }`}
+        >
+          <span class="material-symbols-outlined">how_to_reg</span>
+          <span class="font-label-caps text-label-caps">Unloader Check-in</span>
+        </a>
+        <a 
           href="/floor" 
           class={`flex items-center gap-3 py-3 px-4 transition-colors cursor-pointer text-decoration-none ${
             url === '/floor' || url === '/'
@@ -59,10 +70,6 @@ export function Sidebar() {
           <span class="material-symbols-outlined">help</span>
           <span class="font-label-caps text-label-caps">Support</span>
         </div>
-        <a href="/checkin" class="flex items-center gap-3 py-2 px-4 transition-colors cursor-pointer text-error hover:bg-error-container text-decoration-none">
-          <span class="material-symbols-outlined">logout</span>
-          <span class="font-label-caps text-label-caps">Logout / Check-in</span>
-        </a>
       </div>
     </aside>
   )

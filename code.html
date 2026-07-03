@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Velocity Ops - Unloader Check-in</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "tertiary-fixed": "#fcdeb5",
+                      "on-tertiary-fixed": "#271901",
+                      "surface-container-lowest": "#ffffff",
+                      "surface-container": "#f0edef",
+                      "surface-variant": "#e4e2e4",
+                      "surface": "#fcf8fa",
+                      "secondary-fixed": "#dbe1ff",
+                      "on-secondary-container": "#fefcff",
+                      "outline": "#76777d",
+                      "on-error-container": "#93000a",
+                      "outline-variant": "#c6c6cd",
+                      "on-surface": "#1b1b1d",
+                      "on-primary-fixed-variant": "#3f465c",
+                      "inverse-on-surface": "#f3f0f2",
+                      "on-error": "#ffffff",
+                      "background": "#fcf8fa",
+                      "on-surface-variant": "#45464d",
+                      "tertiary": "#000000",
+                      "on-secondary": "#ffffff",
+                      "primary-fixed": "#dae2fd",
+                      "on-secondary-fixed": "#00174b",
+                      "surface-container-low": "#f6f3f5",
+                      "surface-container-highest": "#e4e2e4",
+                      "secondary": "#0051d5",
+                      "primary-fixed-dim": "#bec6e0",
+                      "on-background": "#1b1b1d",
+                      "surface-dim": "#dcd9db",
+                      "secondary-fixed-dim": "#b4c5ff",
+                      "inverse-surface": "#303032",
+                      "on-primary-fixed": "#131b2e",
+                      "secondary-container": "#316bf3",
+                      "surface-container-high": "#eae7e9",
+                      "on-primary-container": "#7c839b",
+                      "surface-bright": "#fcf8fa",
+                      "error-container": "#ffdad6",
+                      "tertiary-container": "#271901",
+                      "on-tertiary-fixed-variant": "#574425",
+                      "primary": "#000000",
+                      "tertiary-fixed-dim": "#dec29a",
+                      "primary-container": "#131b2e",
+                      "on-tertiary": "#ffffff",
+                      "inverse-primary": "#bec6e0",
+                      "error": "#ba1a1a",
+                      "on-secondary-fixed-variant": "#003ea8",
+                      "surface-tint": "#565e74",
+                      "on-tertiary-container": "#98805d",
+                      "on-primary": "#ffffff"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "gutter": "16px",
+                      "stack-sm": "8px",
+                      "stack-md": "16px",
+                      "unit": "4px",
+                      "margin-mobile": "12px",
+                      "margin-desktop": "24px",
+                      "stack-lg": "24px"
+              },
+              "fontFamily": {
+                      "label-caps": [
+                              "JetBrains Mono"
+                      ],
+                      "headline-lg-mobile": [
+                              "JetBrains Mono"
+                      ],
+                      "body-sm": [
+                              "Inter"
+                      ],
+                      "data-display": [
+                              "JetBrains Mono"
+                      ],
+                      "body-lg": [
+                              "Inter"
+                      ],
+                      "headline-lg": [
+                              "JetBrains Mono"
+                      ],
+                      "headline-md": [
+                              "JetBrains Mono"
+                      ]
+              },
+              "fontSize": {
+                      "label-caps": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.05em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "headline-lg-mobile": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "body-sm": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "data-display": [
+                              "24px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "body-lg": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-lg": [
+                              "32px",
+                              {
+                                      "lineHeight": "40px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "headline-md": [
+                              "20px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "600"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+      </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface min-h-screen flex flex-col font-body-lg">
+<!-- TopAppBar -->
+<header class="w-full top-0 border-b border-outline-variant bg-surface flex justify-between items-center px-margin-mobile py-stack-sm sticky z-50">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">widgets</span>
+<h1 class="font-headline-md text-headline-md font-bold text-primary tracking-tight uppercase">VELOCITY OPS</h1>
+</div>
+<div class="flex items-center gap-3">
+<span class="font-label-caps text-label-caps text-on-surface-variant bg-surface-container-high px-2 py-1 rounded-sm border border-outline-variant">WH-402</span>
+<div class="w-8 h-8 rounded-full bg-primary-fixed flex items-center justify-center border border-outline-variant">
+<span class="material-symbols-outlined text-on-primary-fixed" style="font-variation-settings: 'FILL' 1;">person</span>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-1 p-margin-mobile flex flex-col gap-stack-lg max-w-md mx-auto w-full pb-32">
+<!-- Screen Title -->
+<div>
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-primary uppercase">Unloader Check-in</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Select bay and enter incoming truck details.</p>
+</div>
+<!-- Form Section -->
+<form class="flex flex-col gap-stack-lg flex-1" id="checkin-form">
+<!-- Bay Number Selection (Grid of touch targets) -->
+<div class="bg-surface-container-lowest p-4 rounded-lg border border-outline-variant">
+<label class="block font-label-caps text-label-caps text-on-surface mb-stack-md uppercase">1. Select Bay Number</label>
+<div class="grid grid-cols-3 gap-2">
+<!-- Radio group implemented visually -->
+<button class="bay-btn h-14 bg-surface rounded border border-outline-variant flex items-center justify-center font-data-display text-data-display text-on-surface hover:bg-surface-container-low transition-colors focus:outline-none focus:ring-2 focus:ring-secondary focus:border-transparent" data-bay="71" type="button">71</button>
+<button class="bay-btn h-14 bg-surface rounded border border-outline-variant flex items-center justify-center font-data-display text-data-display text-on-surface hover:bg-surface-container-low transition-colors focus:outline-none focus:ring-2 focus:ring-secondary focus:border-transparent" data-bay="72" type="button">72</button>
+<button class="bay-btn h-14 bg-surface rounded border border-outline-variant flex items-center justify-center font-data-display text-data-display text-on-surface hover:bg-surface-container-low transition-colors focus:outline-none focus:ring-2 focus:ring-secondary focus:border-transparent" data-bay="73" type="button">73</button>
+<button class="bay-btn h-14 bg-surface rounded border border-outline-variant flex items-center justify-center font-data-display text-data-display text-on-surface hover:bg-surface-container-low transition-colors focus:outline-none focus:ring-2 focus:ring-secondary focus:border-transparent" data-bay="74" type="button">74</button>
+<button class="bay-btn h-14 bg-surface rounded border border-outline-variant flex items-center justify-center font-data-display text-data-display text-on-surface hover:bg-surface-container-low transition-colors focus:outline-none focus:ring-2 focus:ring-secondary focus:border-transparent" data-bay="75" type="button">75</button>
+<button class="bay-btn h-14 bg-surface rounded border border-outline-variant flex items-center justify-center font-data-display text-data-display text-on-surface hover:bg-surface-container-low transition-colors focus:outline-none focus:ring-2 focus:ring-secondary focus:border-transparent" data-bay="76" type="button">76</button>
+<button class="bay-btn h-14 bg-surface rounded border border-outline-variant flex items-center justify-center font-data-display text-data-display text-on-surface hover:bg-surface-container-low transition-colors focus:outline-none focus:ring-2 focus:ring-secondary focus:border-transparent" data-bay="77" type="button">77</button>
+<button class="bay-btn h-14 bg-surface rounded border border-outline-variant flex items-center justify-center font-data-display text-data-display text-on-surface hover:bg-surface-container-low transition-colors focus:outline-none focus:ring-2 focus:ring-secondary focus:border-transparent" data-bay="78" type="button">78</button>
+<button class="bay-btn h-14 bg-surface rounded border border-outline-variant flex items-center justify-center font-data-display text-data-display text-on-surface hover:bg-surface-container-low transition-colors focus:outline-none focus:ring-2 focus:ring-secondary focus:border-transparent" data-bay="79" type="button">79</button>
+</div>
+<input id="selected-bay" name="bay" required="" type="hidden"/>
+</div>
+<!-- Text Inputs -->
+<div class="bg-surface-container-lowest p-4 rounded-lg border border-outline-variant flex flex-col gap-stack-md">
+<div>
+<label class="block font-label-caps text-label-caps text-on-surface mb-stack-sm uppercase" for="truck-number">2. Truck Number</label>
+<div class="relative">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-outline">local_shipping</span>
+<input class="w-full h-14 pl-10 pr-4 bg-surface border border-outline-variant rounded font-body-lg text-body-lg text-on-surface placeholder:text-outline focus:ring-2 focus:ring-secondary focus:border-secondary transition-shadow uppercase" id="truck-number" name="truck-number" placeholder="e.g. TRK-8492" required="" type="text"/>
+</div>
+</div>
+<div>
+<label class="block font-label-caps text-label-caps text-on-surface mb-stack-sm uppercase" for="unloader-id">3. Unloader ID</label>
+<div class="relative">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-outline">badge</span>
+<input class="w-full h-14 pl-10 pr-4 bg-surface border border-outline-variant rounded font-body-lg text-body-lg text-on-surface placeholder:text-outline focus:ring-2 focus:ring-secondary focus:border-secondary transition-shadow uppercase" id="unloader-id" name="unloader-id" placeholder="Scan or type ID" required="" type="text"/>
+</div>
+</div>
+</div>
+</form>
+</main>
+<!-- Fixed Bottom Action Bar -->
+<div class="fixed bottom-0 left-0 w-full bg-surface border-t border-outline-variant p-margin-mobile z-40 pb-safe">
+<button class="w-full h-14 bg-secondary text-on-secondary font-headline-md text-headline-md rounded flex items-center justify-center gap-2 hover:bg-secondary-container hover:text-on-secondary-container transition-colors active:scale-[0.98] shadow-sm disabled:opacity-50 disabled:cursor-not-allowed" id="submit-btn" type="button">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+            START SESSION
+        </button>
+</div>
+<script>
+        // Simple interaction logic for bay selection
+        const bayButtons = document.querySelectorAll('.bay-btn');
+        const bayInput = document.getElementById('selected-bay');
+
+        bayButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                // Remove active state from all
+                bayButtons.forEach(b => {
+                    b.classList.remove('bg-secondary-container', 'text-on-secondary-container', 'border-secondary-container');
+                    b.classList.add('bg-surface', 'text-on-surface', 'border-outline-variant');
+                });
+                
+                // Add active state to clicked
+                btn.classList.remove('bg-surface', 'text-on-surface', 'border-outline-variant');
+                btn.classList.add('bg-secondary-container', 'text-on-secondary-container', 'border-secondary-container');
+                
+                // Update hidden input
+                bayInput.value = btn.dataset.bay;
+            });
+        });
+
+        // Form submission simulation
+        document.getElementById('submit-btn').addEventListener('click', (e) => {
+            e.preventDefault();
+            const bay = bayInput.value;
+            const truck = document.getElementById('truck-number').value;
+            const id = document.getElementById('unloader-id').value;
+
+            if(!bay || !truck || !id) {
+                alert("Please complete all fields.");
+                return;
+            }
+            
+            // Visual feedback
+            const btn = e.currentTarget;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = `<span class="material-symbols-outlined animate-spin">sync</span> PROCESSING`;
+            btn.classList.add('opacity-80');
+            
+            setTimeout(() => {
+                btn.innerHTML = `<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">check_circle</span> CHECKED IN`;
+                btn.classList.remove('bg-secondary', 'hover:bg-secondary-container');
+                btn.classList.add('bg-[#146c2e]', 'text-white'); // using custom color for specific success state temporarily
+                
+                setTimeout(() => {
+                    // Reset form
+                    document.getElementById('checkin-form').reset();
+                    bayInput.value = '';
+                    bayButtons.forEach(b => {
+                        b.classList.remove('bg-secondary-container', 'text-on-secondary-container', 'border-secondary-container');
+                        b.classList.add('bg-surface', 'text-on-surface', 'border-outline-variant');
+                    });
+                    
+                    // Reset button
+                    btn.innerHTML = originalText;
+                    btn.classList.remove('bg-[#146c2e]', 'text-white', 'opacity-80');
+                    btn.classList.add('bg-secondary', 'hover:bg-secondary-container');
+                }, 2000);
+            }, 1000);
+        });
+    </script>
+</body></html>

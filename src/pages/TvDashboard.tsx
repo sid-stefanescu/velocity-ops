@@ -33,7 +33,7 @@ export function TvDashboard() {
     projectETA(target - completed, currentVelocity, shiftSchedule.value, now), 
   [target, completed, currentVelocity, shiftSchedule.value, now]);
 
-  const { wir, status: wirStatus } = useMemo(() => calculateWIR(left, right), [left, right]);
+  const { status: wirStatus } = useMemo(() => calculateWIR(left, right), [left, right]);
 
   const progressPercent = target > 0 ? Math.min(100, (completed / target) * 100) : 0;
 

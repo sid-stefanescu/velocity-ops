@@ -1,6 +1,17 @@
-import { useEffect, useState } from 'preact/hooks'
+import { useEffect, useState, useMemo } from 'preact/hooks'
+import { differenceInMinutes, format, setHours, setMinutes, addHours, isWithinInterval } from 'date-fns'
 import { Sidebar } from '../components/Sidebar'
 import { TopAppBar } from '../components/TopAppBar'
+import { 
+  targetTrucks, 
+  truckLog, 
+  historicalAnchor, 
+  shiftSchedule,
+  trucksCompleted,
+  leftWingCount,
+  rightWingCount
+} from '../store'
+import { calculateSmoothedVelocity, projectETA, calculateWIR } from '../lib/waveEngine'
 
 export function FloorOperations() {
   const [time, setTime] = useState(new Date())
@@ -9,6 +20,57 @@ export function FloorOperations() {
     const timer = setInterval(() => setTime(new Date()), 1000)
     return () => clearInterval(timer)
   }, [])
+
+  const logs = truckLog.value;
+  const target = targetTrucks.value;
+  const completed = trucksCompleted.value;
+  const left = leftWingCount.value;
+  const right = rightWingCount.value;
+  
+  const currentVelocity = useMemo(() => 
+    calculateSmoothedVelocity(logs, shiftSchedule.value, historicalAnchor.value, time), 
+  [logs, shiftSchedule.value, historicalAnchor.value, time]);
+
+  const etaDate = useMemo(() => 
+    projectETA(target - completed, currentVelocity, shiftSchedule.value, time), 
+  [target, completed, currentVelocity, shiftSchedule.value, time]);
+
+  const { wir, status: wirStatus } = useMemo(() => calculateWIR(left, right), [left, right]);
+  
+  const timeRem = etaDate ? Math.max(0, differenceInMinutes(etaDate, time)) : 0;
+
+  const truckWindows = useMemo(() => {
+    const windows = [];
+    let currentStart = setMinutes(setHours(time, 9), 30); // 09:30
+    for (let i = 0; i < 3; i++) {
+      const currentEnd = addHours(currentStart, 2);
+      // Ensure log timestamp is a Date object and check if it falls in interval
+      const count = logs.filter(log => {
+        try {
+          return isWithinInterval(new Date(log.timestamp), { start: currentStart, end: currentEnd })
+        } catch(e) {
+          return false;
+        }
+      }).length;
+      
+      const targetWindow = 8; // Arbitrary target for each 2h block
+      const progress = Math.min((count / targetWindow) * 100, 100);
+      
+      let state = 'future';
+      if (time > currentEnd) state = 'past';
+      else if (time >= currentStart && time <= currentEnd) state = 'active';
+
+      windows.push({
+        startStr: format(currentStart, 'HH:mm'),
+        count,
+        target: targetWindow,
+        progress,
+        state
+      });
+      currentStart = currentEnd;
+    }
+    return windows;
+  }, [logs, time]);
 
   const formatTime = (date: Date) => {
     const h = String(date.getHours()).padStart(2, '0')
@@ -28,18 +90,33 @@ export function FloorOperations() {
             
             {/* ROW 1: CRITICAL ALERTS & TIME */}
             <section class="col-span-12 lg:col-span-8 flex flex-col gap-stack-sm">
-              <div class="bg-error text-white px-6 py-4 flex items-center justify-between animate-alert rounded-sm shadow-sm">
-                <div class="flex items-center gap-4">
-                  <span class="material-symbols-outlined text-4xl" style={{fontVariationSettings: "'FILL' 1"}}>warning</span>
-                  <div>
-                    <h3 class="font-headline-md text-headline-md uppercase tracking-widest m-0 p-0">NEXT TRUCK ALERT</h3>
-                    <p class="font-label-caps text-label-caps m-0 p-0">PRIORITY SHIPMENT [ID-9923] APPROACHING GATE 4 IN 03:15 MINS</p>
+              {wirStatus === 'Critical Imbalance' ? (
+                <div class="bg-error text-white px-6 py-4 flex items-center justify-between animate-alert rounded-sm shadow-sm">
+                  <div class="flex items-center gap-4">
+                    <span class="material-symbols-outlined text-4xl" style={{fontVariationSettings: "'FILL' 1"}}>warning</span>
+                    <div>
+                      <h3 class="font-headline-md text-headline-md uppercase tracking-widest m-0 p-0">ROUTING ALERT: YARD IMBALANCE</h3>
+                      <p class="font-label-caps text-label-caps m-0 p-0">DIRECT TRUCKS TO {left < right ? 'LEFT' : 'RIGHT'} WING DOORS.</p>
+                    </div>
+                  </div>
+                  <div class="text-right">
+                    <span class="font-data-display text-[48px] leading-none">{(wir * 100).toFixed(0)}%</span>
                   </div>
                 </div>
-                <div class="text-right">
-                  <span class="font-data-display text-[48px] leading-none">03:15</span>
+              ) : (
+                <div class="bg-secondary text-white px-6 py-4 flex items-center justify-between rounded-sm shadow-sm">
+                  <div class="flex items-center gap-4">
+                    <span class="material-symbols-outlined text-4xl" style={{fontVariationSettings: "'FILL' 1"}}>verified</span>
+                    <div>
+                      <h3 class="font-headline-md text-headline-md uppercase tracking-widest m-0 p-0">YARD BALANCED</h3>
+                      <p class="font-label-caps text-label-caps m-0 p-0">OPERATIONS NORMAL</p>
+                    </div>
+                  </div>
+                  <div class="text-right">
+                    <span class="font-data-display text-[48px] leading-none">{(wir * 100).toFixed(0)}%</span>
+                  </div>
                 </div>
-              </div>
+              )}
             </section>
 
             <section class="col-span-12 lg:col-span-4 bg-primary text-white p-6 rounded shadow-sm flex flex-col justify-center items-center relative overflow-hidden">
@@ -56,28 +133,28 @@ export function FloorOperations() {
                 <div class="bg-white border border-outline-variant p-4 rounded shadow-sm flex flex-col justify-between">
                   <span class="font-label-caps text-on-surface-variant text-[10px] uppercase">Avg Unload Rate</span>
                   <div class="mt-2">
-                    <span class="font-data-display text-4xl text-primary">10.2</span>
+                    <span class="font-data-display text-4xl text-primary">{currentVelocity.toFixed(1)}</span>
                     <span class="block font-label-caps text-[10px] font-bold opacity-70 uppercase">TRK/HR</span>
                   </div>
                 </div>
                 <div class="bg-white border border-outline-variant p-4 rounded shadow-sm flex flex-col justify-between">
                   <span class="font-label-caps text-on-surface-variant text-[10px] uppercase">Target Rate</span>
                   <div class="mt-2">
-                    <span class="font-data-display text-4xl text-primary">4.0</span>
+                    <span class="font-data-display text-4xl text-primary">{historicalAnchor.value.toFixed(1)}</span>
                     <span class="block font-label-caps text-[10px] font-bold opacity-70 uppercase">T/HR</span>
                   </div>
                 </div>
                 <div class="bg-white border border-outline-variant p-4 rounded shadow-sm flex flex-col justify-between">
                   <span class="font-label-caps text-on-surface-variant text-[10px] uppercase">Est. Finish</span>
                   <div class="mt-2">
-                    <span class="font-data-display text-4xl text-primary">21:00</span>
+                    <span class="font-data-display text-4xl text-primary">{etaDate ? format(etaDate, 'HH:mm') : '--:--'}</span>
                     <span class="block font-label-caps text-[10px] font-bold opacity-70 uppercase">HRS</span>
                   </div>
                 </div>
                 <div class="bg-white border border-outline-variant p-4 rounded shadow-sm flex flex-col justify-between">
                   <span class="font-label-caps text-on-surface-variant text-[10px] uppercase">Time Rem.</span>
                   <div class="mt-2">
-                    <span class="font-data-display text-4xl text-primary">0</span>
+                    <span class="font-data-display text-4xl text-primary">{timeRem}</span>
                     <span class="block font-label-caps text-[10px] font-bold opacity-70 uppercase">MIN</span>
                   </div>
                 </div>
@@ -135,7 +212,7 @@ export function FloorOperations() {
                     <circle cx="80" cy="25" fill="#0051d5" r="2"></circle>
                     <circle cx="92" cy="15" fill="#0051d5" r="2"></circle>
                     <line stroke="#0051d5" stroke-dasharray="4 2" stroke-width="2" x1="92" x2="92" y1="0" y2="100"></line>
-                    <text fill="#0051d5" font-family="JetBrains Mono" font-size="4" font-weight="bold" x="78" y="8">EST. FINISH</text>
+                    <text fill="#0051d5" font-family="JetBrains Mono" font-size="4" font-weight="bold" x="65" y="8">EST. FINISH</text>
                   </svg>
                 </div>
                 <div class="pt-4 text-right flex justify-end gap-6">
@@ -261,33 +338,19 @@ export function FloorOperations() {
                   <h3 class="font-headline-md text-headline-md m-0 p-0">Truck Windows</h3>
                 </div>
                 <div class="flex-1 space-y-8 flex flex-col gap-6">
-                  <div class="space-y-3">
-                    <div class="flex justify-between items-end">
-                      <span class="font-data-display text-data-display">09:30</span>
-                      <span class="font-label-caps text-label-caps text-on-surface-variant">4/5 TRUCKS</span>
+                  {truckWindows.map((window, i) => (
+                    <div class={`space-y-3 ${window.state === 'future' ? 'opacity-40' : window.state === 'past' ? 'opacity-60' : ''}`} key={i}>
+                      <div class="flex justify-between items-end">
+                        <span class="font-data-display text-data-display">{window.startStr}</span>
+                        <span class="font-label-caps text-label-caps text-on-surface-variant">{window.count}/{window.target} TRUCKS</span>
+                      </div>
+                      <div class="w-full bg-surface-container-highest h-4 rounded-full overflow-hidden">
+                        <div class={`h-full ${window.state === 'future' ? 'bg-outline-variant' : 'bg-secondary'} transition-all`} style={{width: `${window.progress}%`}}></div>
+                      </div>
+                      {window.state === 'active' && <p class="font-label-caps text-[10px] text-right text-secondary font-bold m-0 p-0">IN PROGRESS</p>}
+                      {window.state === 'past' && <p class="font-label-caps text-[10px] text-right m-0 p-0">COMPLETED</p>}
                     </div>
-                    <div class="w-full bg-surface-container-highest h-4 rounded-full overflow-hidden">
-                      <div class="h-full bg-secondary w-[80%]"></div>
-                    </div>
-                    <p class="font-label-caps text-[10px] text-right text-secondary font-bold m-0 p-0">CLEARANCE: 12 MINS</p>
-                  </div>
-                  <div class="space-y-3 opacity-60">
-                    <div class="flex justify-between items-end">
-                      <span class="font-data-display text-data-display">11:30</span>
-                      <span class="font-label-caps text-label-caps text-on-surface-variant">0/8 TRUCKS</span>
-                    </div>
-                    <div class="w-full bg-surface-container-highest h-4 rounded-full overflow-hidden">
-                      <div class="h-full bg-outline-variant w-0"></div>
-                    </div>
-                    <p class="font-label-caps text-[10px] text-right m-0 p-0">QUEUED</p>
-                  </div>
-                  <div class="space-y-3 opacity-40">
-                    <div class="flex justify-between items-end">
-                      <span class="font-data-display text-data-display">13:30</span>
-                      <span class="font-label-caps text-label-caps text-on-surface-variant">PENDING</span>
-                    </div>
-                    <div class="w-full bg-surface-container-highest h-4 rounded-full"></div>
-                  </div>
+                  ))}
                 </div>
                 <div class="mt-auto pt-6 border-t border-outline-variant">
                   <div class="flex items-center justify-between mb-2">
@@ -326,23 +389,23 @@ export function FloorOperations() {
             </section>
 
             <section class="col-span-12 lg:col-span-5 bg-white border border-outline-variant p-6 rounded shadow-sm mb-8">
-              <h3 class="font-headline-md text-headline-md mb-6 m-0 p-0">Fleet Distribution</h3>
+              <h3 class="font-headline-md text-headline-md mb-6 m-0 p-0">Shift Progress</h3>
               <div class="grid grid-cols-2 gap-4 h-[calc(100%-40px)]">
                 <div class="bg-surface-container p-4 flex flex-col justify-center items-center gap-2">
-                  <p class="font-label-caps text-label-caps opacity-60 m-0 p-0">INBOUND</p>
-                  <p class="font-data-display text-[42px] leading-none m-0 p-0">12</p>
+                  <p class="font-label-caps text-label-caps opacity-60 m-0 p-0">COMPLETED TRUCKS</p>
+                  <p class="font-data-display text-[42px] leading-none text-secondary m-0 p-0">{completed}</p>
                 </div>
                 <div class="bg-surface-container p-4 flex flex-col justify-center items-center gap-2">
-                  <p class="font-label-caps text-label-caps opacity-60 m-0 p-0">OUTBOUND</p>
-                  <p class="font-data-display text-[42px] leading-none m-0 p-0">08</p>
+                  <p class="font-label-caps text-label-caps opacity-60 m-0 p-0">REMAINING</p>
+                  <p class="font-data-display text-[42px] leading-none m-0 p-0">{Math.max(0, target - completed)}</p>
                 </div>
                 <div class="bg-surface-container p-4 flex flex-col justify-center items-center gap-2">
-                  <p class="font-label-caps text-label-caps opacity-60 m-0 p-0">MAINTENANCE</p>
-                  <p class="font-data-display text-[42px] leading-none text-error m-0 p-0">03</p>
+                  <p class="font-label-caps text-label-caps opacity-60 m-0 p-0">LEFT WING LOAD</p>
+                  <p class="font-data-display text-[42px] leading-none m-0 p-0">{left}</p>
                 </div>
                 <div class="bg-surface-container p-4 flex flex-col justify-center items-center gap-2">
-                  <p class="font-label-caps text-label-caps opacity-60 m-0 p-0">DORMANT</p>
-                  <p class="font-data-display text-[42px] leading-none m-0 p-0">14</p>
+                  <p class="font-label-caps text-label-caps opacity-60 m-0 p-0">RIGHT WING LOAD</p>
+                  <p class="font-data-display text-[42px] leading-none m-0 p-0">{right}</p>
                 </div>
               </div>
             </section>

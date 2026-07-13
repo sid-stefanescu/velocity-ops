@@ -16,15 +16,26 @@ export function Sidebar() {
       </div>
       <nav class="flex-1 space-y-2">
         <a 
-          href="/checkin" 
+          href="/tablet" 
           class={`flex items-center gap-3 py-3 px-4 transition-colors cursor-pointer text-decoration-none ${
-            url === '/checkin'
+            url === '/tablet'
               ? 'text-secondary font-bold border-r-4 border-secondary bg-surface-container' 
               : 'text-on-surface-variant hover:bg-surface-container'
           }`}
         >
-          <span class="material-symbols-outlined">how_to_reg</span>
-          <span class="font-label-caps text-label-caps">Unloader Check-in</span>
+          <span class="material-symbols-outlined">tablet_mac</span>
+          <span class="font-label-caps text-label-caps">Tablet Input</span>
+        </a>
+        <a 
+          href="/batch" 
+          class={`flex items-center gap-3 py-3 px-4 transition-colors cursor-pointer text-decoration-none ${
+            url === '/batch'
+              ? 'text-secondary font-bold border-r-4 border-secondary bg-surface-container' 
+              : 'text-on-surface-variant hover:bg-surface-container'
+          }`}
+        >
+          <span class="material-symbols-outlined">dataset</span>
+          <span class="font-label-caps text-label-caps">Batch Entry</span>
         </a>
         <a 
           href="/floor" 
@@ -56,9 +67,16 @@ export function Sidebar() {
           <span class="material-symbols-outlined">history</span>
           <span class="font-label-caps text-label-caps">Historical Reports</span>
         </a>
-        <a href="#" class="flex items-center gap-3 py-3 px-4 transition-colors cursor-pointer text-on-surface-variant hover:bg-surface-container text-decoration-none">
+        <a 
+          href="/admin" 
+          class={`flex items-center gap-3 py-3 px-4 transition-colors cursor-pointer text-decoration-none ${
+            url === '/admin'
+              ? 'text-secondary font-bold border-r-4 border-secondary bg-surface-container' 
+              : 'text-on-surface-variant hover:bg-surface-container'
+          }`}
+        >
           <span class="material-symbols-outlined">settings</span>
-          <span class="font-label-caps text-label-caps">System Settings</span>
+          <span class="font-label-caps text-label-caps">Admin Settings</span>
         </a>
       </nav>
       <button class="mb-8 w-full py-3 bg-secondary text-white font-label-caps text-label-caps rounded flex items-center justify-center gap-2 scale-95 active:scale-90 transition-transform">

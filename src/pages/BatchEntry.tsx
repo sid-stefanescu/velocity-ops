@@ -1,7 +1,7 @@
 import { useState } from 'preact/hooks';
 import { Sidebar } from '../components/Sidebar';
 import { TopAppBar } from '../components/TopAppBar';
-import { truckLog } from '../store';
+import { truckLog, isSidebarOpen } from '../store';
 import type { TruckLogEntry } from '../store';
 import { setHours, setMinutes, addMinutes } from 'date-fns';
 
@@ -62,7 +62,7 @@ export function BatchEntry() {
   return (
     <div class="flex h-screen bg-surface w-full overflow-hidden">
       <Sidebar />
-      <div class="flex-1 ml-64 flex flex-col h-full relative">
+      <div class={`flex-1 ${isSidebarOpen.value ? 'ml-64' : 'ml-[80px]'} transition-all duration-300 flex flex-col h-full relative`}>
         <TopAppBar />
         <main class="flex-1 overflow-y-auto custom-scrollbar p-6 lg:p-10 relative">
           

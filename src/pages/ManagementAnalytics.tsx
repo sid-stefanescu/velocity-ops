@@ -1,11 +1,12 @@
 import { Sidebar } from '../components/Sidebar'
 import { TopAppBar } from '../components/TopAppBar'
+import { isSidebarOpen } from '../store'
 
 export function ManagementAnalytics() {
   return (
     <div class="bg-background text-on-background font-body-lg overflow-hidden h-screen flex w-full">
       <Sidebar />
-      <div class="flex-1 ml-64 flex flex-col h-screen overflow-hidden w-full">
+      <div class={`flex-1 ${isSidebarOpen.value ? 'ml-64' : 'ml-[80px]'} transition-all duration-300 flex flex-col h-screen overflow-hidden w-full`}>
         <TopAppBar title="Management Insights" activeTab="Strategic" showSearch={true} />
 
         <main class="flex-1 p-gutter overflow-y-auto bg-background custom-scrollbar w-full">

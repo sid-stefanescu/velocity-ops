@@ -35,6 +35,7 @@ export const targetTrucks = signal<number>(loadState('targetTrucks', 145));
 export const historicalAnchor = signal<number>(loadState('historicalAnchor', 2.5));
 export const shiftSchedule = signal<ShiftBlock[]>(loadState('shiftSchedule', defaultShiftSchedule));
 export const truckLog = signal<TruckLogEntry[]>(loadState('truckLog', []));
+export const isSidebarOpen = signal<boolean>(loadState('isSidebarOpen', true));
 
 // Derived Signals
 export const trucksCompleted = computed(() => truckLog.value.length);
@@ -60,6 +61,7 @@ effect(() => { localStorage.setItem('targetTrucks', JSON.stringify(targetTrucks.
 effect(() => { localStorage.setItem('historicalAnchor', JSON.stringify(historicalAnchor.value)); });
 effect(() => { localStorage.setItem('shiftSchedule', JSON.stringify(shiftSchedule.value)); });
 effect(() => { localStorage.setItem('truckLog', JSON.stringify(truckLog.value)); });
+effect(() => { localStorage.setItem('isSidebarOpen', JSON.stringify(isSidebarOpen.value)); });
 
 // Cross-tab synchronization
 window.addEventListener('storage', (e) => {
@@ -67,6 +69,7 @@ window.addEventListener('storage', (e) => {
   if (e.key === 'historicalAnchor' && e.newValue) historicalAnchor.value = JSON.parse(e.newValue);
   if (e.key === 'shiftSchedule' && e.newValue) shiftSchedule.value = JSON.parse(e.newValue);
   if (e.key === 'truckLog' && e.newValue) truckLog.value = JSON.parse(e.newValue);
+  if (e.key === 'isSidebarOpen' && e.newValue) isSidebarOpen.value = JSON.parse(e.newValue);
 });
 
 // Actions

@@ -9,7 +9,8 @@ import {
   shiftSchedule,
   trucksCompleted,
   leftWingCount,
-  rightWingCount
+  rightWingCount,
+  isSidebarOpen
 } from '../store'
 import { calculateSmoothedVelocity, projectETA, calculateWIR } from '../lib/waveEngine'
 
@@ -82,7 +83,7 @@ export function FloorOperations() {
   return (
     <div class="bg-background text-on-background font-body-lg overflow-hidden h-screen flex w-full">
       <Sidebar />
-      <div class="flex-1 ml-64 flex flex-col h-screen overflow-hidden w-full">
+      <div class={`flex-1 ${isSidebarOpen.value ? 'ml-64' : 'ml-[80px]'} transition-all duration-300 flex flex-col h-screen overflow-hidden w-full`}>
         <TopAppBar title="Warehouse Operations" activeTab="Operational" />
 
         <main class="flex-1 p-gutter overflow-y-auto custom-scrollbar bg-surface-container-low w-full">

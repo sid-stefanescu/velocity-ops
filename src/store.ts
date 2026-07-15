@@ -37,6 +37,10 @@ export const shiftSchedule = signal<ShiftBlock[]>(loadState('shiftSchedule', def
 export const truckLog = signal<TruckLogEntry[]>(loadState('truckLog', []));
 export const isSidebarOpen = signal<boolean>(loadState('isSidebarOpen', true));
 
+// WAVE Algo Settings
+export const waveWeights = signal<{w1: number, w2: number, w3: number}>(loadState('waveWeights', {w1: 0.6, w2: 0.3, w3: 0.1}));
+export const wirThresholds = signal<{warning: number, critical: number}>(loadState('wirThresholds', {warning: 0.20, critical: 0.35}));
+
 // Derived Signals
 export const trucksCompleted = computed(() => truckLog.value.length);
 export const leftWingCount = computed(() => truckLog.value.filter(t => t.wing === 'Left').length);
@@ -62,6 +66,8 @@ effect(() => { localStorage.setItem('historicalAnchor', JSON.stringify(historica
 effect(() => { localStorage.setItem('shiftSchedule', JSON.stringify(shiftSchedule.value)); });
 effect(() => { localStorage.setItem('truckLog', JSON.stringify(truckLog.value)); });
 effect(() => { localStorage.setItem('isSidebarOpen', JSON.stringify(isSidebarOpen.value)); });
+effect(() => { localStorage.setItem('waveWeights', JSON.stringify(waveWeights.value)); });
+effect(() => { localStorage.setItem('wirThresholds', JSON.stringify(wirThresholds.value)); });
 
 // Cross-tab synchronization
 window.addEventListener('storage', (e) => {
@@ -70,6 +76,8 @@ window.addEventListener('storage', (e) => {
   if (e.key === 'shiftSchedule' && e.newValue) shiftSchedule.value = JSON.parse(e.newValue);
   if (e.key === 'truckLog' && e.newValue) truckLog.value = JSON.parse(e.newValue);
   if (e.key === 'isSidebarOpen' && e.newValue) isSidebarOpen.value = JSON.parse(e.newValue);
+  if (e.key === 'waveWeights' && e.newValue) waveWeights.value = JSON.parse(e.newValue);
+  if (e.key === 'wirThresholds' && e.newValue) wirThresholds.value = JSON.parse(e.newValue);
 });
 
 // Actions

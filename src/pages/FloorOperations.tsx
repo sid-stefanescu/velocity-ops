@@ -10,7 +10,9 @@ import {
   trucksCompleted,
   leftWingCount,
   rightWingCount,
-  isSidebarOpen
+  isSidebarOpen,
+  waveWeights,
+  wirThresholds
 } from '../store'
 import { calculateSmoothedVelocity, projectETA, calculateWIR } from '../lib/waveEngine'
 
@@ -23,22 +25,20 @@ export function FloorOperations() {
   }, [])
 
   const logs = truckLog.value;
-  const target = targetTrucks.value;
-  const completed = trucksCompleted.value;
   const left = leftWingCount.value;
   const right = rightWingCount.value;
   
   const currentVelocity = useMemo(() => 
-    calculateSmoothedVelocity(logs, shiftSchedule.value, historicalAnchor.value, time), 
-  [logs, shiftSchedule.value, historicalAnchor.value, time]);
+    calculateSmoothedVelocity(logs, shiftSchedule.value, historicalAnchor.value, waveWeights.value, time), 
+  [logs, shiftSchedule.value, historicalAnchor.value, waveWeights.value, time]);
 
-  const etaDate = useMemo(() => 
-    projectETA(target - completed, currentVelocity, shiftSchedule.value, time), 
-  [target, completed, currentVelocity, shiftSchedule.value, time]);
+  const eta = useMemo(() => 
+    projectETA(targetTrucks.value - trucksCompleted.value, currentVelocity, shiftSchedule.value, time), 
+  [targetTrucks.value, trucksCompleted.value, currentVelocity, shiftSchedule.value, time]);
 
-  const { wir, status: wirStatus } = useMemo(() => calculateWIR(left, right), [left, right]);
+  const { wir, status: wirStatus } = useMemo(() => calculateWIR(left, right, wirThresholds.value), [left, right, wirThresholds.value]);
   
-  const timeRem = etaDate ? Math.max(0, differenceInMinutes(etaDate, time)) : 0;
+  const timeRem = eta ? Math.max(0, differenceInMinutes(eta, time)) : 0;
 
   const truckWindows = useMemo(() => {
     const windows = [];

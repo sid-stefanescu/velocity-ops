@@ -98,6 +98,7 @@ export const calculateSmoothedVelocity = (
   logs: TruckLogEntry[],
   schedule: ShiftBlock[],
   historicalAnchor: number,
+  weights: {w1: number, w2: number, w3: number},
   now: Date = new Date()
 ) => {
   const currentShift = getCurrentShift(schedule, now);
@@ -117,7 +118,7 @@ export const calculateSmoothedVelocity = (
   const v2 = calculateWindowVelocity(w2Start, w1Start, logs, allIntervals, currentShiftStart, historicalAnchor);
   const v3 = calculateWindowVelocity(w3Start, w2Start, logs, allIntervals, currentShiftStart, historicalAnchor);
 
-  return (v1 * 0.6) + (v2 * 0.3) + (v3 * 0.1);
+  return (v1 * weights.w1) + (v2 * weights.w2) + (v3 * weights.w3);
 };
 
 // WAVE: ETA Projection
@@ -171,15 +172,15 @@ export const projectETA = (
 };
 
 // Spatial Diagnostics
-export const calculateWIR = (leftWingCount: number, rightWingCount: number) => {
+export const calculateWIR = (leftWingCount: number, rightWingCount: number, thresholds: {warning: number, critical: number}) => {
   const total = leftWingCount + rightWingCount;
   if (total === 0) return { wir: 0, status: 'Balanced' as const };
   
   const wir = Math.abs(leftWingCount - rightWingCount) / total;
   
   let status: 'Balanced' | 'Warning' | 'Critical Imbalance' = 'Balanced';
-  if (wir >= 0.35) status = 'Critical Imbalance';
-  else if (wir >= 0.20) status = 'Warning';
+  if (wir >= thresholds.critical) status = 'Critical Imbalance';
+  else if (wir >= thresholds.warning) status = 'Warning';
 
   return { wir, status };
 };

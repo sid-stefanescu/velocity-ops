@@ -1,16 +1,20 @@
 import { useState } from 'preact/hooks';
-import { shiftSchedule, historicalAnchor, targetTrucks, clearData } from '../store';
+import { shiftSchedule, historicalAnchor, targetTrucks, clearData, waveWeights, wirThresholds } from '../store';
 import type { ShiftBlock } from '../store';
 
 export function AdminSettings() {
   const [schedule, setSchedule] = useState<ShiftBlock[]>([...shiftSchedule.value]);
   const [anchor, setAnchor] = useState(historicalAnchor.value);
   const [target, setTarget] = useState(targetTrucks.value);
+  const [weights, setWeights] = useState({...waveWeights.value});
+  const [thresholds, setThresholds] = useState({...wirThresholds.value});
 
   const handleSave = () => {
     shiftSchedule.value = schedule;
     historicalAnchor.value = anchor;
     targetTrucks.value = target;
+    waveWeights.value = weights;
+    wirThresholds.value = thresholds;
     alert('Settings Saved Successfully!');
   };
 
@@ -62,6 +66,54 @@ export function AdminSettings() {
               onInput={(e) => setAnchor(Number((e.target as HTMLInputElement).value))}
               class="w-full p-2 border border-outline-variant rounded"
             />
+          </div>
+
+          <h3 class="font-headline-sm mt-4">WAVE Algorithm (C2HRA Weights)</h3>
+          <div class="grid grid-cols-3 gap-4">
+            <div>
+              <label class="block font-label-caps text-[10px] mb-1">0-2h Weight</label>
+              <input 
+                type="number" step="0.1" value={weights.w1}
+                onInput={(e) => setWeights({...weights, w1: Number((e.target as HTMLInputElement).value)})}
+                class="w-full p-2 border border-outline-variant rounded"
+              />
+            </div>
+            <div>
+              <label class="block font-label-caps text-[10px] mb-1">2-4h Weight</label>
+              <input 
+                type="number" step="0.1" value={weights.w2}
+                onInput={(e) => setWeights({...weights, w2: Number((e.target as HTMLInputElement).value)})}
+                class="w-full p-2 border border-outline-variant rounded"
+              />
+            </div>
+            <div>
+              <label class="block font-label-caps text-[10px] mb-1">4-6h Weight</label>
+              <input 
+                type="number" step="0.1" value={weights.w3}
+                onInput={(e) => setWeights({...weights, w3: Number((e.target as HTMLInputElement).value)})}
+                class="w-full p-2 border border-outline-variant rounded"
+              />
+            </div>
+          </div>
+
+          <h3 class="font-headline-sm mt-4">Spatial Diagnostics (WIR) Thresholds</h3>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block font-label-caps text-[10px] mb-1">Warning Threshold</label>
+              <input 
+                type="number" step="0.05" value={thresholds.warning}
+                onInput={(e) => setThresholds({...thresholds, warning: Number((e.target as HTMLInputElement).value)})}
+                class="w-full p-2 border border-outline-variant rounded"
+              />
+            </div>
+            <div>
+              <label class="block font-label-caps text-[10px] mb-1">Critical Threshold</label>
+              <input 
+                type="number" step="0.05" value={thresholds.critical}
+                onInput={(e) => setThresholds({...thresholds, critical: Number((e.target as HTMLInputElement).value)})}
+                class="w-full p-2 border border-outline-variant rounded"
+              />
+            </div>
           </div>
         </div>
 

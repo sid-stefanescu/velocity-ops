@@ -7,7 +7,9 @@ import {
   shiftSchedule,
   trucksCompleted,
   leftWingCount,
-  rightWingCount
+  rightWingCount,
+  waveWeights,
+  wirThresholds
 } from '../store';
 import { calculateSmoothedVelocity, projectETA, calculateWIR, getActiveShiftIntervals } from '../lib/waveEngine';
 
@@ -15,7 +17,7 @@ export function TvDashboard() {
   const [now, setNow] = useState(new Date());
 
   useEffect(() => {
-    const timer = setInterval(() => setNow(new Date()), 10000); // Update every 10s
+    const timer = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
@@ -26,14 +28,14 @@ export function TvDashboard() {
   const right = rightWingCount.value;
 
   const currentVelocity = useMemo(() => 
-    calculateSmoothedVelocity(logs, shiftSchedule.value, historicalAnchor.value, now), 
-  [logs, shiftSchedule.value, historicalAnchor.value, now]);
+    calculateSmoothedVelocity(logs, shiftSchedule.value, historicalAnchor.value, waveWeights.value, now), 
+  [logs, shiftSchedule.value, historicalAnchor.value, waveWeights.value, now]);
 
   const etaDate = useMemo(() => 
     projectETA(target - completed, currentVelocity, shiftSchedule.value, now), 
   [target, completed, currentVelocity, shiftSchedule.value, now]);
 
-  const { status: wirStatus } = useMemo(() => calculateWIR(left, right), [left, right]);
+  const { status: wirStatus } = useMemo(() => calculateWIR(left, right, wirThresholds.value), [left, right, wirThresholds.value]);
 
   const progressPercent = target > 0 ? Math.min(100, (completed / target) * 100) : 0;
 

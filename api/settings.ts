@@ -1,7 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '../lib/prisma';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
@@ -35,18 +33,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           wirCritical: thresholds.critical,
         }
       });
-      
-      // Update shifts
-      await tx.shiftBlock.deleteMany();
-      if (shifts && shifts.length > 0) {
-        await tx.shiftBlock.createMany({
-          data: shifts.map((s: any) => ({
-            start: s.start,
-            end: s.end,
-            teams: s.teams,
-          }))
-        });
-      }
+      // Only updating global settings now
     });
 
     res.status(200).json({ success: true });

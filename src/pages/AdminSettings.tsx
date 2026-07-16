@@ -1,6 +1,7 @@
 import { useState } from 'preact/hooks';
-import { shiftSchedule, historicalAnchor, targetTrucks, clearData, waveWeights, wirThresholds, saveSettings } from '../store';
+import { shiftSchedule, shiftHistory, historicalAnchor, targetTrucks, clearData, waveWeights, wirThresholds, saveSettings, saveShiftSchedule } from '../store';
 import type { ShiftBlock } from '../store';
+import { format } from 'date-fns';
 
 export function AdminSettings() {
   const [schedule, setSchedule] = useState<ShiftBlock[]>([...shiftSchedule.value]);
@@ -9,9 +10,14 @@ export function AdminSettings() {
   const [weights, setWeights] = useState({...waveWeights.value});
   const [thresholds, setThresholds] = useState({...wirThresholds.value});
 
-  const handleSave = async () => {
-    await saveSettings(schedule, anchor, target, weights, thresholds);
-    alert('Settings Saved Successfully!');
+  const handleSaveSettings = async () => {
+    await saveSettings(anchor, target, weights, thresholds);
+    alert('Global Settings Saved Successfully!');
+  };
+
+  const handleSaveShifts = async () => {
+    await saveShiftSchedule(schedule);
+    alert('Shift Schedule Updated and Logged!');
   };
 
   const handleClear = () => {
@@ -44,7 +50,7 @@ export function AdminSettings() {
           <h2 class="font-headline-md text-headline-md">Global Configuration</h2>
           
           <div>
-            <label class="block font-label-caps text-label-caps mb-2">Daily Truck Target</label>
+            <label class="block font-label-caps text-label-caps mb-2">Shift Volume Target</label>
             <input 
               type="number" 
               value={target}
@@ -111,6 +117,8 @@ export function AdminSettings() {
               />
             </div>
           </div>
+
+          <button onClick={handleSaveSettings} class="bg-secondary text-white px-6 py-3 rounded font-bold hover:bg-secondary-container mt-4 self-end">SAVE SETTINGS</button>
         </div>
 
         <div class="bg-white p-6 rounded border border-outline-variant shadow-sm flex flex-col gap-4">
@@ -151,11 +159,51 @@ export function AdminSettings() {
               <button onClick={() => removeShift(i)} class="text-error mt-4 p-2 material-symbols-outlined hover:bg-error-container rounded">delete</button>
             </div>
           ))}
+          <button onClick={handleSaveShifts} class="bg-primary text-white px-6 py-3 rounded font-bold hover:bg-[#3d4b68] mt-4 self-end">UPDATE SCHEDULE</button>
         </div>
 
-        <div class="flex justify-between">
-          <button onClick={handleClear} class="border border-error text-error px-6 py-3 rounded font-bold hover:bg-error-container">CLEAR TODAYS DATA</button>
-          <button onClick={handleSave} class="bg-secondary text-white px-6 py-3 rounded font-bold hover:bg-secondary-container">SAVE SETTINGS</button>
+        {/* Shift History Section */}
+        <div class="bg-white p-6 rounded border border-outline-variant shadow-sm flex flex-col gap-4">
+          <h2 class="font-headline-md text-headline-md">Shift Update History</h2>
+          {shiftHistory.value.length === 0 ? (
+            <p class="text-on-surface-variant font-label-caps text-label-caps">No update history found.</p>
+          ) : (
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="border-b border-outline-variant">
+                    <th class="p-2 font-label-caps text-label-caps text-on-surface-variant">Update Time</th>
+                    <th class="p-2 font-label-caps text-label-caps text-on-surface-variant">Schedule Configuration</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {shiftHistory.value.map(log => {
+                    const date = new Date(log.timestamp);
+                    let parsed = [];
+                    try { parsed = JSON.parse(log.schedule); } catch (e) {}
+                    return (
+                      <tr key={log.id} class="border-b border-outline-variant last:border-0 hover:bg-surface-container-low transition-colors">
+                        <td class="p-2 font-mono text-sm whitespace-nowrap">{format(date, 'MMM dd, HH:mm:ss')}</td>
+                        <td class="p-2 text-sm text-on-surface-variant">
+                          <ul class="m-0 pl-4">
+                            {parsed.map((s: any, idx: number) => (
+                              <li key={idx}>{s.start} - {s.end} ({s.teams} teams)</li>
+                            ))}
+                          </ul>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        <div class="bg-error-container p-6 rounded border border-error shadow-sm flex flex-col gap-4">
+          <h2 class="font-headline-md text-headline-md text-error">Danger Zone</h2>
+          <p class="text-on-surface-variant text-sm">Clearing today's data will permanently remove all truck logs for the current session. This cannot be undone.</p>
+          <button onClick={handleClear} class="bg-error text-white px-6 py-3 rounded font-bold hover:bg-red-700 self-start">CLEAR TODAYS DATA</button>
         </div>
       </div>
     </div>

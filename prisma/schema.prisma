@@ -35,3 +35,9 @@ model Settings {
   wirWarning       Float  @default(0.20)
   wirCritical      Float  @default(0.35)
 }
+
+model ShiftLog {
+  id        String   @id @default(cuid())
+  timestamp DateTime @default(now())
+  schedule  String   // JSON serialized schedule array
+}

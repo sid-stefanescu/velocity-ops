@@ -15,6 +15,12 @@ export type ShiftBlock = {
   teams: number;
 };
 
+export type ShiftLogEntry = {
+  id: string;
+  timestamp: string;
+  schedule: string;
+};
+
 // Default Schedule (for fallback)
 export const defaultShiftSchedule: ShiftBlock[] = [
   { id: 's1', start: '09:30', end: '11:30', teams: 14 },
@@ -27,6 +33,7 @@ export const defaultShiftSchedule: ShiftBlock[] = [
 export const targetTrucks = signal<number>(145);
 export const historicalAnchor = signal<number>(2.5);
 export const shiftSchedule = signal<ShiftBlock[]>(defaultShiftSchedule);
+export const shiftHistory = signal<ShiftLogEntry[]>([]);
 export const truckLog = signal<TruckLogEntry[]>([]);
 export const isSidebarOpen = signal<boolean>(true); // Keep in memory or localStorage for UI
 
@@ -62,6 +69,7 @@ const fetchState = async () => {
     const data = await res.json();
     if (data.logs) truckLog.value = data.logs;
     if (data.shifts && data.shifts.length > 0) shiftSchedule.value = data.shifts;
+    if (data.shiftLogs) shiftHistory.value = data.shiftLogs;
     if (data.settings) {
       targetTrucks.value = data.settings.targetTrucks;
       historicalAnchor.value = data.settings.historicalAnchor;
@@ -130,7 +138,6 @@ export const clearData = async () => {
 
 // Save Settings Action
 export const saveSettings = async (
-  shifts: ShiftBlock[], 
   anchor: number, 
   target: number, 
   weights: {w1: number, w2: number, w3: number}, 
@@ -140,10 +147,23 @@ export const saveSettings = async (
     await fetch('/api/settings', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ shifts, anchor, target, weights, thresholds })
+      body: JSON.stringify({ anchor, target, weights, thresholds })
     });
     await fetchState(); // Refresh local state
   } catch (err) {
     console.error('Failed to save settings', err);
+  }
+};
+
+export const saveShiftSchedule = async (shifts: ShiftBlock[]) => {
+  try {
+    await fetch('/api/shift', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ shifts })
+    });
+    await fetchState();
+  } catch (err) {
+    console.error('Failed to save shift schedule', err);
   }
 };

@@ -75,6 +75,95 @@ export function FloorOperations() {
     return windows;
   }, [logs, time]);
 
+  // Dynamic Graph Math
+  const graphData = useMemo(() => {
+    const schedule = shiftSchedule.value;
+    if (schedule.length === 0) return null;
+    
+    const parseTime = (timeStr: string) => {
+      const [h, m] = timeStr.split(':').map(Number);
+      return setMinutes(setHours(new Date(), h), m);
+    };
+
+    const firstShiftStart = parseTime(schedule[0].start);
+    let lastShiftEnd = parseTime(schedule[schedule.length - 1].end);
+    
+    let xMaxTime = lastShiftEnd;
+    if (time > xMaxTime) xMaxTime = time;
+    if (etaDate && etaDate > xMaxTime) xMaxTime = etaDate;
+    xMaxTime = addHours(xMaxTime, 1);
+
+    const totalDurationMs = xMaxTime.getTime() - firstShiftStart.getTime();
+
+    const mapX = (d: Date) => {
+      const elapsed = d.getTime() - firstShiftStart.getTime();
+      return Math.min(100, Math.max(0, (elapsed / totalDurationMs) * 100));
+    };
+
+    const yMax = target > 0 ? target * 1.1 : 1; 
+    const mapY = (val: number) => {
+      return 100 - (val / yMax) * 100;
+    };
+
+    const pStartX = mapX(firstShiftStart);
+    const pStartY = mapY(0);
+    const pEndX = mapX(lastShiftEnd);
+    const pEndY = mapY(target);
+    const projectedPathD = `M ${pStartX} ${pStartY} L ${pEndX} ${pEndY}`;
+
+    const sortedLogs = [...logs]
+      .filter(l => new Date(l.timestamp).toDateString() === new Date().toDateString())
+      .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+    
+    let currentCount = 0;
+    let actualPoints = [[mapX(firstShiftStart), mapY(0)]];
+    
+    for (const log of sortedLogs) {
+      currentCount++;
+      const logDate = new Date(log.timestamp);
+      if (logDate >= firstShiftStart) {
+         actualPoints.push([mapX(logDate), mapY(currentCount)]);
+      }
+    }
+    
+    if (time >= firstShiftStart) {
+       actualPoints.push([mapX(time), mapY(currentCount)]);
+    }
+
+    const actualPathD = `M ${actualPoints.map(p => `${p[0]} ${p[1]}`).join(' L ')}`;
+
+    let variancePolygonD = '';
+    if (actualPoints.length > 0) {
+      const getProjectedY = (x: number) => {
+         if (x <= pStartX) return pStartY;
+         if (x >= pEndX) return pEndY;
+         const slope = (pEndY - pStartY) / (pEndX - pStartX);
+         return pStartY + slope * (x - pStartX);
+      };
+
+      const upperLine = actualPoints.map(p => `${p[0]} ${p[1]}`).join(' L ');
+      const lowerLine = [...actualPoints].reverse().map(p => `${p[0]} ${getProjectedY(p[0])}`).join(' L ');
+      variancePolygonD = `M ${upperLine} L ${lowerLine} Z`;
+    }
+
+    const labelsX = [
+      { x: mapX(firstShiftStart), label: format(firstShiftStart, 'HH:mm') },
+      { x: mapX(new Date(firstShiftStart.getTime() + totalDurationMs / 2)), label: format(new Date(firstShiftStart.getTime() + totalDurationMs / 2), 'HH:mm') },
+      { x: mapX(xMaxTime), label: format(xMaxTime, 'HH:mm') }
+    ];
+
+    const labelsY = [
+      { y: mapY(yMax), label: Math.round(yMax).toString() },
+      { y: mapY(yMax / 2), label: Math.round(yMax / 2).toString() },
+      { y: mapY(0), label: '0' }
+    ];
+
+    const etaX = etaDate ? mapX(etaDate) : null;
+    const etaY = etaDate ? mapY(target) : null;
+
+    return { projectedPathD, actualPathD, variancePolygonD, labelsX, labelsY, etaX, etaY, actualPoints };
+  }, [logs, shiftSchedule.value, target, time, etaDate]);
+
   const formatTime = (date: Date) => {
     const h = String(date.getHours()).padStart(2, '0')
     const m = String(date.getMinutes()).padStart(2, '0')
@@ -131,38 +220,6 @@ export function FloorOperations() {
 
             {/* ROW 1.5: PERFORMANCE & MOMENTUM */}
             <section class="col-span-12 grid grid-cols-12 gap-stack-md">
-              {/* KPIs */}
-              <div class="col-span-12 lg:col-span-4 grid grid-cols-2 gap-4">
-                <div class="bg-white border border-outline-variant p-4 rounded shadow-sm flex flex-col justify-between">
-                  <span class="font-label-caps text-on-surface-variant text-[10px] uppercase">Avg Unload Rate</span>
-                  <div class="mt-2">
-                    <span class="font-data-display text-4xl text-primary">{currentVelocity.toFixed(1)}</span>
-                    <span class="block font-label-caps text-[10px] font-bold opacity-70 uppercase">TRK/HR</span>
-                  </div>
-                </div>
-                <div class="bg-white border border-outline-variant p-4 rounded shadow-sm flex flex-col justify-between">
-                  <span class="font-label-caps text-on-surface-variant text-[10px] uppercase">Target Rate</span>
-                  <div class="mt-2">
-                    <span class="font-data-display text-4xl text-primary">{historicalAnchor.value.toFixed(1)}</span>
-                    <span class="block font-label-caps text-[10px] font-bold opacity-70 uppercase">T/HR</span>
-                  </div>
-                </div>
-                <div class="bg-white border border-outline-variant p-4 rounded shadow-sm flex flex-col justify-between">
-                  <span class="font-label-caps text-on-surface-variant text-[10px] uppercase">Est. Finish</span>
-                  <div class="mt-2">
-                    <span class="font-data-display text-4xl text-primary">{etaDate ? format(etaDate, 'HH:mm') : '--:--'}</span>
-                    <span class="block font-label-caps text-[10px] font-bold opacity-70 uppercase">HRS</span>
-                  </div>
-                </div>
-                <div class="bg-white border border-outline-variant p-4 rounded shadow-sm flex flex-col justify-between">
-                  <span class="font-label-caps text-on-surface-variant text-[10px] uppercase">Time Rem.</span>
-                  <div class="mt-2">
-                    <span class="font-data-display text-4xl text-primary">{timeRem}</span>
-                    <span class="block font-label-caps text-[10px] font-bold opacity-70 uppercase">MIN</span>
-                  </div>
-                </div>
-              </div>
-
               {/* Graph */}
               <div class="col-span-12 lg:col-span-8 bg-white border border-outline-variant p-6 rounded shadow-sm flex flex-col gap-4">
                 <div class="flex justify-between items-center">
@@ -190,37 +247,117 @@ export function FloorOperations() {
                 </div>
                 
                 <div class="relative h-48 w-full flex items-end gap-1 border-l-2 border-b-2 border-outline-variant pb-2 pl-2 mt-4">
-                  <div class="absolute left-[-30px] top-0 h-full flex flex-col justify-between text-[10px] font-label-caps text-outline">
-                    <span>60</span>
-                    <span>30</span>
-                    <span>0</span>
-                  </div>
-                  <div class="absolute bottom-[-24px] left-0 w-full flex justify-between text-[10px] font-label-caps text-outline">
-                    <span>08:00</span>
-                    <span>15:00</span>
-                    <span>22:00</span>
-                  </div>
-                  <svg class="absolute inset-0 h-full w-full overflow-visible" preserveAspectRatio="none" viewBox="0 0 100 100">
-                    <path d="M 0 80 L 20 70 L 40 75 L 60 60 L 80 45 L 92 35 L 92 15 L 80 25 L 60 55 L 40 65 L 20 75 L 0 85 Z" fill="#ba1a1a" fill-opacity="0.25"></path>
-                    <line stroke="#c6c6cd" stroke-dasharray="2" stroke-width="0.5" x1="0" x2="0" y1="0" y2="100"></line>
-                    <line stroke="#c6c6cd" stroke-dasharray="2" stroke-width="0.5" x1="50" x2="50" y1="0" y2="100"></line>
-                    <line stroke="#c6c6cd" stroke-dasharray="2" stroke-width="0.5" x1="100" x2="100" y1="0" y2="100"></line>
-                    <path d="M 0 85 L 20 75 L 40 65 L 60 55 L 80 25 L 92 15 L 92 100 L 0 100 Z" fill="#0051d5" fill-opacity="0.1"></path>
-                    <path d="M 0 80 L 20 70 L 40 75 L 60 60 L 80 45 L 100 30" fill="none" stroke="#76777d" stroke-dasharray="4" stroke-width="2"></path>
-                    <path d="M 0 85 L 20 75 L 40 65 L 60 55 L 80 25 L 92 15" fill="none" stroke="#0051d5" stroke-width="3"></path>
-                    <circle cx="0" cy="85" fill="#0051d5" r="2"></circle>
-                    <circle cx="20" cy="75" fill="#0051d5" r="2"></circle>
-                    <circle cx="40" cy="65" fill="#0051d5" r="2"></circle>
-                    <circle cx="60" cy="55" fill="#0051d5" r="2"></circle>
-                    <circle cx="80" cy="25" fill="#0051d5" r="2"></circle>
-                    <circle cx="92" cy="15" fill="#0051d5" r="2"></circle>
-                    <line stroke="#0051d5" stroke-dasharray="4 2" stroke-width="2" x1="92" x2="92" y1="0" y2="100"></line>
-                    <text fill="#0051d5" font-family="JetBrains Mono" font-size="4" font-weight="bold" x="65" y="8">EST. FINISH</text>
-                  </svg>
+                  {graphData ? (
+                    <>
+                      <div class="absolute left-[-30px] top-0 h-full flex flex-col justify-between text-[10px] font-label-caps text-outline">
+                        <span>{graphData.labelsY[0].label}</span>
+                        <span>{graphData.labelsY[1].label}</span>
+                        <span>{graphData.labelsY[2].label}</span>
+                      </div>
+                      <div class="absolute bottom-[-24px] left-0 w-full flex justify-between text-[10px] font-label-caps text-outline">
+                        <span>{graphData.labelsX[0].label}</span>
+                        <span>{graphData.labelsX[1].label}</span>
+                        <span>{graphData.labelsX[2].label}</span>
+                      </div>
+                      <svg class="absolute inset-0 h-full w-full overflow-visible" preserveAspectRatio="none" viewBox="0 0 100 100">
+                        {/* Background Grid Lines */}
+                        <line stroke="#c6c6cd" stroke-dasharray="2" stroke-width="0.5" x1="0" x2="0" y1="0" y2="100"></line>
+                        <line stroke="#c6c6cd" stroke-dasharray="2" stroke-width="0.5" x1="50" x2="50" y1="0" y2="100"></line>
+                        <line stroke="#c6c6cd" stroke-dasharray="2" stroke-width="0.5" x1="100" x2="100" y1="0" y2="100"></line>
+                        
+                        {/* Variance Fill */}
+                        <path d={graphData.variancePolygonD} fill="#ba1a1a" fill-opacity="0.15"></path>
+                        
+                        {/* Actual Progress Fill (Blue Shading) */}
+                        <path d={`${graphData.actualPathD} L ${graphData.actualPoints[graphData.actualPoints.length-1]?.[0] || 0} 100 L ${graphData.actualPoints[0]?.[0] || 0} 100 Z`} fill="#0051d5" fill-opacity="0.05"></path>
+                        
+                        {/* Projected Path */}
+                        <path d={graphData.projectedPathD} fill="none" stroke="#76777d" stroke-dasharray="4" stroke-width="2"></path>
+                        
+                        {/* Actual Path */}
+                        <path d={graphData.actualPathD} fill="none" stroke="#0051d5" stroke-width="3"></path>
+                        
+                        {/* Current Time Dot */}
+                        {graphData.actualPoints.length > 0 && (
+                          <circle cx={graphData.actualPoints[graphData.actualPoints.length-1][0]} cy={graphData.actualPoints[graphData.actualPoints.length-1][1]} fill="#0051d5" r="2"></circle>
+                        )}
+                        
+                        {/* ETA Marker */}
+                        {graphData.etaX !== null && graphData.etaY !== null && (
+                          <>
+                            <circle cx={graphData.etaX} cy={graphData.etaY} fill="#0051d5" r="2"></circle>
+                            <line stroke="#0051d5" stroke-dasharray="4 2" stroke-width="1.5" x1={graphData.etaX} x2={graphData.etaX} y1="0" y2="100"></line>
+                            <text fill="#0051d5" font-family="JetBrains Mono" font-size="4" font-weight="bold" x={Math.max(0, graphData.etaX - 15)} y={Math.max(4, graphData.etaY - 4)}>ETA</text>
+                          </>
+                        )}
+                      </svg>
+                    </>
+                  ) : (
+                    <div class="w-full h-full flex items-center justify-center text-outline">No Schedule Data</div>
+                  )}
                 </div>
                 <div class="pt-4 text-right flex justify-end gap-6">
                   <span class="text-[12px] font-data-display text-secondary uppercase">* Weighted by Recency</span>
                   <span class="text-[12px] font-data-display text-outline uppercase">Units: U/HR | Time: 4H Window</span>
+                </div>
+              </div>
+
+              {/* Stats Column (Right Side) */}
+              <div class="col-span-12 lg:col-span-4 flex flex-col gap-stack-md">
+                
+                {/* Shift Progress */}
+                <div class="bg-white border border-outline-variant p-6 rounded shadow-sm">
+                  <h3 class="font-headline-md text-headline-md mb-6 m-0 p-0">Shift Progress</h3>
+                  <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-surface-container p-4 flex flex-col justify-center items-center gap-2">
+                      <p class="font-label-caps text-label-caps opacity-60 m-0 p-0">COMPLETED</p>
+                      <p class="font-data-display text-[42px] leading-none text-secondary m-0 p-0">{completed}</p>
+                    </div>
+                    <div class="bg-surface-container p-4 flex flex-col justify-center items-center gap-2">
+                      <p class="font-label-caps text-label-caps opacity-60 m-0 p-0">REMAINING</p>
+                      <p class="font-data-display text-[42px] leading-none m-0 p-0">{Math.max(0, target - completed)}</p>
+                    </div>
+                    <div class="bg-surface-container p-4 flex flex-col justify-center items-center gap-2">
+                      <p class="font-label-caps text-label-caps opacity-60 m-0 p-0">LEFT LOAD</p>
+                      <p class="font-data-display text-[42px] leading-none m-0 p-0">{left}</p>
+                    </div>
+                    <div class="bg-surface-container p-4 flex flex-col justify-center items-center gap-2">
+                      <p class="font-label-caps text-label-caps opacity-60 m-0 p-0">RIGHT LOAD</p>
+                      <p class="font-data-display text-[42px] leading-none m-0 p-0">{right}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* KPIs */}
+                <div class="grid grid-cols-2 gap-4">
+                  <div class="bg-white border border-outline-variant p-4 rounded shadow-sm flex flex-col justify-between">
+                    <span class="font-label-caps text-on-surface-variant text-[10px] uppercase">Avg Rate</span>
+                    <div class="mt-2">
+                      <span class="font-data-display text-4xl text-primary">{currentVelocity.toFixed(1)}</span>
+                      <span class="block font-label-caps text-[10px] font-bold opacity-70 uppercase">TRK/HR</span>
+                    </div>
+                  </div>
+                  <div class="bg-white border border-outline-variant p-4 rounded shadow-sm flex flex-col justify-between">
+                    <span class="font-label-caps text-on-surface-variant text-[10px] uppercase">Target Rate</span>
+                    <div class="mt-2">
+                      <span class="font-data-display text-4xl text-primary">{historicalAnchor.value.toFixed(1)}</span>
+                      <span class="block font-label-caps text-[10px] font-bold opacity-70 uppercase">T/HR</span>
+                    </div>
+                  </div>
+                  <div class="bg-white border border-outline-variant p-4 rounded shadow-sm flex flex-col justify-between">
+                    <span class="font-label-caps text-on-surface-variant text-[10px] uppercase">Est. Finish</span>
+                    <div class="mt-2">
+                      <span class="font-data-display text-4xl text-primary">{etaDate ? format(etaDate, 'HH:mm') : '--:--'}</span>
+                      <span class="block font-label-caps text-[10px] font-bold opacity-70 uppercase">HRS</span>
+                    </div>
+                  </div>
+                  <div class="bg-white border border-outline-variant p-4 rounded shadow-sm flex flex-col justify-between">
+                    <span class="font-label-caps text-on-surface-variant text-[10px] uppercase">Time Rem.</span>
+                    <div class="mt-2">
+                      <span class="font-data-display text-4xl text-primary">{timeRem}</span>
+                      <span class="block font-label-caps text-[10px] font-bold opacity-70 uppercase">MIN</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </section>
@@ -322,7 +459,7 @@ export function FloorOperations() {
             </section>
 
             {/* ROW 3: LIVE FEED & DATA MAP */}
-            <section class="col-span-12 lg:col-span-7 bg-white border border-outline-variant p-4 rounded shadow-sm flex flex-col gap-4 mb-8">
+            <section class="col-span-12 bg-white border border-outline-variant p-4 rounded shadow-sm flex flex-col gap-4 mb-8">
               <div class="flex justify-between items-center">
                 <div class="flex items-center gap-2">
                   <span class="material-symbols-outlined text-secondary">videocam</span>
@@ -333,7 +470,7 @@ export function FloorOperations() {
                   <span class="font-label-caps text-label-caps text-secondary">LIVE</span>
                 </div>
               </div>
-              <div class="aspect-video w-full bg-black relative rounded overflow-hidden group">
+              <div class="aspect-[21/9] w-full bg-black relative rounded overflow-hidden group">
                 <img class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDNxE0n1CZfEQiTGfItFUKdNTSoE0EB_1DYqaiTxb5AP3p38RYP--UgilpH71R9m0Mw3t07Bv7xjp299-OewY05ZGCDRnHrFwqsk3tzJzNLePZ2okyGb2yM4KbRwEZGx_AJAqA3_jjmcjuaEKXNeJDlSCGidAU7Acs5-OPY0fGX_gUEV4FN8GVNQV8RO4YgHBHTF0cN6g_csBEm0zZNDxcvLh2vIj07scWnqIY1UAVRBxd5NMvWOH54BwrE_a93ChSQkjPRn2IHUWo"/>
                 <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
                 <div class="absolute top-4 left-4 p-2 bg-black/40 backdrop-blur-md rounded font-label-caps text-[10px] text-white">
@@ -341,28 +478,6 @@ export function FloorOperations() {
                 </div>
                 <div class="absolute border-2 border-secondary top-[40%] left-[30%] w-32 h-20 flex flex-col justify-end p-2">
                   <div class="bg-secondary text-white text-[8px] font-label-caps px-1">ID: T-242 - CONFIRMED</div>
-                </div>
-              </div>
-            </section>
-
-            <section class="col-span-12 lg:col-span-5 bg-white border border-outline-variant p-6 rounded shadow-sm mb-8">
-              <h3 class="font-headline-md text-headline-md mb-6 m-0 p-0">Shift Progress</h3>
-              <div class="grid grid-cols-2 gap-4 h-[calc(100%-40px)]">
-                <div class="bg-surface-container p-4 flex flex-col justify-center items-center gap-2">
-                  <p class="font-label-caps text-label-caps opacity-60 m-0 p-0">COMPLETED TRUCKS</p>
-                  <p class="font-data-display text-[42px] leading-none text-secondary m-0 p-0">{completed}</p>
-                </div>
-                <div class="bg-surface-container p-4 flex flex-col justify-center items-center gap-2">
-                  <p class="font-label-caps text-label-caps opacity-60 m-0 p-0">REMAINING</p>
-                  <p class="font-data-display text-[42px] leading-none m-0 p-0">{Math.max(0, target - completed)}</p>
-                </div>
-                <div class="bg-surface-container p-4 flex flex-col justify-center items-center gap-2">
-                  <p class="font-label-caps text-label-caps opacity-60 m-0 p-0">LEFT WING LOAD</p>
-                  <p class="font-data-display text-[42px] leading-none m-0 p-0">{left}</p>
-                </div>
-                <div class="bg-surface-container p-4 flex flex-col justify-center items-center gap-2">
-                  <p class="font-label-caps text-label-caps opacity-60 m-0 p-0">RIGHT WING LOAD</p>
-                  <p class="font-data-display text-[42px] leading-none m-0 p-0">{right}</p>
                 </div>
               </div>
             </section>

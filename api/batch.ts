@@ -8,18 +8,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
   
-  const { wing, bay, type, timestamp } = req.body;
+  const { logs } = req.body;
+  if (!logs || !Array.isArray(logs)) {
+    return res.status(400).json({ error: 'Invalid payload' });
+  }
+
   try {
-    const log = await prisma.truckLog.create({
-      data: {
-        wing,
-        bay: bay || null,
-        type,
-        timestamp: timestamp ? new Date(timestamp) : undefined,
-      }
+    const data = logs.map(log => ({
+      wing: log.wing,
+      bay: log.bay || null,
+      type: log.type,
+      timestamp: log.timestamp ? new Date(log.timestamp) : new Date(),
+    }));
+
+    await prisma.truckLog.createMany({
+      data
     });
     
-    res.status(201).json(log);
+    res.status(201).json({ success: true, count: data.length });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Internal Server Error' });

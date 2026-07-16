@@ -3,15 +3,21 @@ import { activeTeams, addTruck } from '../store';
 
 export function TabletInput() {
   const [selectedWing, setSelectedWing] = useState<'Left' | 'Right' | null>(null);
+  const [selectedBay, setSelectedBay] = useState<string | null>(null);
+
+  const leftBays = ['79', '78', '77', '76'];
+  const rightBays = ['72', '71', '69', '68']; // 70 is loading only
 
   const handleWingSelect = (wing: 'Left' | 'Right') => {
     setSelectedWing(wing);
+    setSelectedBay(null);
   };
 
   const handleTypeSelect = (type: 'Pallet' | 'Floor') => {
-    if (selectedWing) {
-      addTruck(selectedWing, type);
+    if (selectedWing && selectedBay) {
+      addTruck(selectedWing, type, selectedBay);
       setSelectedWing(null);
+      setSelectedBay(null);
     }
   };
 
@@ -58,35 +64,49 @@ export function TabletInput() {
           <div class="absolute inset-0 bg-black/80 backdrop-blur-sm z-50 flex flex-col p-6 animate-fade-in">
             <header class="flex justify-between items-center mb-6">
               <h2 class="font-headline-lg text-[36px] font-bold text-white uppercase">
-                {selectedWing} Wing Payload
+                {selectedWing} Wing {selectedBay ? `- BAY ${selectedBay}` : 'Bay Selection'}
               </h2>
               <button 
-                onClick={() => setSelectedWing(null)}
+                onClick={() => { setSelectedWing(null); setSelectedBay(null); }}
                 class="bg-[#333] hover:bg-[#444] rounded-full w-16 h-16 flex items-center justify-center text-white"
               >
                 <span class="material-symbols-outlined text-4xl">close</span>
               </button>
             </header>
             
-            <div class="flex-1 flex gap-6">
-              <button 
-                onClick={() => handleTypeSelect('Pallet')}
-                class="flex-1 bg-[#1a3a24] hover:bg-[#234d31] active:bg-[#2d5e3c] rounded-2xl flex flex-col items-center justify-center border-4 border-[#3a6e4d] transition-all"
-              >
-                <span class="material-symbols-outlined text-[120px] text-[#4ade80] mb-6">inventory_2</span>
-                <span class="font-headline-lg text-[56px] font-bold">PALLETIZED</span>
-                <span class="text-xl text-[#888] font-mono mt-4">QUICK UNLOAD</span>
-              </button>
+            {!selectedBay ? (
+              <div class="flex-1 grid grid-cols-2 gap-6 content-center">
+                {(selectedWing === 'Left' ? leftBays : rightBays).map(bay => (
+                  <button 
+                    key={bay}
+                    onClick={() => setSelectedBay(bay)}
+                    class="bg-[#222] hover:bg-[#333] active:bg-[#444] py-12 rounded-2xl flex flex-col items-center justify-center border-4 border-[#444] transition-all"
+                  >
+                    <span class="font-headline-lg text-[64px] font-bold text-white">BAY {bay}</span>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div class="flex-1 flex gap-6">
+                <button 
+                  onClick={() => handleTypeSelect('Pallet')}
+                  class="flex-1 bg-[#1a3a24] hover:bg-[#234d31] active:bg-[#2d5e3c] rounded-2xl flex flex-col items-center justify-center border-4 border-[#3a6e4d] transition-all"
+                >
+                  <span class="material-symbols-outlined text-[120px] text-[#4ade80] mb-6">inventory_2</span>
+                  <span class="font-headline-lg text-[56px] font-bold">PALLETIZED</span>
+                  <span class="text-xl text-[#888] font-mono mt-4">QUICK UNLOAD</span>
+                </button>
 
-              <button 
-                onClick={() => handleTypeSelect('Floor')}
-                class="flex-1 bg-[#3a281a] hover:bg-[#4d3623] active:bg-[#5e432d] rounded-2xl flex flex-col items-center justify-center border-4 border-[#6e4e3a] transition-all"
-              >
-                <span class="material-symbols-outlined text-[120px] text-[#fb923c] mb-6">view_column_2</span>
-                <span class="font-headline-lg text-[56px] font-bold">FLOOR-LOAD</span>
-                <span class="text-xl text-[#888] font-mono mt-4">MANUAL UNLOAD</span>
-              </button>
-            </div>
+                <button 
+                  onClick={() => handleTypeSelect('Floor')}
+                  class="flex-1 bg-[#3a281a] hover:bg-[#4d3623] active:bg-[#5e432d] rounded-2xl flex flex-col items-center justify-center border-4 border-[#6e4e3a] transition-all"
+                >
+                  <span class="material-symbols-outlined text-[120px] text-[#fb923c] mb-6">view_column_2</span>
+                  <span class="font-headline-lg text-[56px] font-bold">FLOOR-LOAD</span>
+                  <span class="text-xl text-[#888] font-mono mt-4">MANUAL UNLOAD</span>
+                </button>
+              </div>
+            )}
           </div>
         )}
       </main>

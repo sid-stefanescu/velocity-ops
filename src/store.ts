@@ -3,6 +3,7 @@ import { signal, computed, effect } from '@preact/signals';
 export type TruckLogEntry = {
   id: string;
   wing: 'Left' | 'Right';
+  bay?: string;
   type: 'Pallet' | 'Floor';
   timestamp: string;
 };
@@ -79,11 +80,12 @@ if (typeof window !== 'undefined') {
 }
 
 // Actions
-export const addTruck = async (wing: 'Left' | 'Right', type: 'Pallet' | 'Floor') => {
+export const addTruck = async (wing: 'Left' | 'Right', type: 'Pallet' | 'Floor', bay?: string) => {
   // Optimistic update for immediate UI response
   const newEntry: TruckLogEntry = {
     id: 'temp-' + Date.now(),
     wing,
+    bay,
     type,
     timestamp: new Date().toISOString()
   };
@@ -93,11 +95,27 @@ export const addTruck = async (wing: 'Left' | 'Right', type: 'Pallet' | 'Floor')
     await fetch('/api/truck', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ wing, type })
+      body: JSON.stringify({ wing, bay, type })
     });
     // Optional: could re-fetch state immediately here
   } catch (err) {
     console.error('Failed to add truck', err);
+  }
+};
+
+export const addBatch = async (logs: Omit<TruckLogEntry, 'id'>[]) => {
+  // Optimistic update
+  const newLogs = logs.map(l => ({ ...l, id: 'temp-' + Math.random().toString(36).substring(7) }));
+  truckLog.value = [...truckLog.value, ...newLogs];
+
+  try {
+    await fetch('/api/batch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ logs })
+    });
+  } catch (err) {
+    console.error('Failed to add batch', err);
   }
 };
 

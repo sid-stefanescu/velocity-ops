@@ -227,110 +227,64 @@ export function FloorOperations() {
 
             {/* ROW 2: BAYS STATUS & TRUCK PROGRESS */}
             <section class="col-span-12 xl:col-span-9 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-stack-md">
-              {/* Bay 1 */}
-              <div class="bg-white border border-outline-variant p-4 flex flex-col gap-4 shadow-sm relative overflow-hidden group">
-                <div class="flex justify-between items-start">
-                  <div>
-                    <p class="font-label-caps text-label-caps text-on-surface-variant m-0 p-0">BAY 01</p>
-                    <h4 class="font-headline-md text-headline-md m-0 p-0">LOAD_A4</h4>
-                  </div>
-                  <span class="bg-secondary-container text-on-secondary-container px-2 py-1 font-label-caps text-[10px] rounded">ACTIVE</span>
-                </div>
-                <div class="flex-1 py-4">
-                  <div class="h-24 w-full bg-surface-container-low rounded relative">
-                    <div class="absolute inset-0 bg-secondary/5 flex items-center justify-center">
-                      <span class="material-symbols-outlined text-secondary text-opacity-30 text-5xl">local_shipping</span>
+              
+              {/* Left Wing Bays */}
+              {[79, 78, 77, 76].map(bay => {
+                const bayLogs = logs.filter(l => l.bay === String(bay));
+                const total = bayLogs.length;
+                return (
+                  <div key={bay} class="bg-white border border-outline-variant p-4 flex flex-col gap-4 shadow-sm relative overflow-hidden">
+                    <div class="flex justify-between items-start">
+                      <div>
+                        <p class="font-label-caps text-label-caps text-on-surface-variant m-0 p-0">LEFT WING</p>
+                        <h4 class="font-headline-md text-headline-md m-0 p-0">BAY {bay}</h4>
+                      </div>
+                      <span class="bg-outline-variant bg-opacity-20 text-on-surface-variant px-2 py-1 font-label-caps text-[10px] rounded">UNLOADING</span>
                     </div>
-                    <div class="absolute bottom-0 left-0 h-1 bg-secondary transition-all duration-1000" style={{width: '72%'}}></div>
-                  </div>
-                </div>
-                <div class="flex justify-between font-label-caps text-label-caps">
-                  <span class="opacity-60">PROGRESS</span>
-                  <span class="text-secondary font-bold">72%</span>
-                </div>
-              </div>
-
-              {/* Bay 2 */}
-              <div class="bg-white border border-outline-variant p-4 flex flex-col gap-4 shadow-sm relative overflow-hidden">
-                <div class="flex justify-between items-start">
-                  <div>
-                    <p class="font-label-caps text-label-caps text-on-surface-variant m-0 p-0">BAY 02</p>
-                    <h4 class="font-headline-md text-headline-md m-0 p-0">DOCK_B2</h4>
-                  </div>
-                  <span class="bg-error-container text-error px-2 py-1 font-label-caps text-[10px] rounded animate-pulse">DELAYED</span>
-                </div>
-                <div class="flex-1 py-4">
-                  <div class="h-24 w-full bg-error-container bg-opacity-20 rounded flex items-center justify-center">
-                    <span class="material-symbols-outlined text-error text-opacity-50 text-5xl">error_outline</span>
-                  </div>
-                </div>
-                <div class="flex justify-between font-label-caps text-label-caps">
-                  <span class="opacity-60">ETA OFFSET</span>
-                  <span class="text-error font-bold">+18 MIN</span>
-                </div>
-              </div>
-
-              {/* Bay 3 */}
-              <div class="bg-surface-container-low border border-dashed border-outline-variant p-4 flex flex-col gap-4 shadow-none opacity-60">
-                <div class="flex justify-between items-start">
-                  <div>
-                    <p class="font-label-caps text-label-caps text-on-surface-variant m-0 p-0">BAY 03</p>
-                    <h4 class="font-headline-md text-headline-md m-0 p-0">EMPTY</h4>
-                  </div>
-                  <span class="bg-outline-variant bg-opacity-20 text-on-surface-variant px-2 py-1 font-label-caps text-[10px] rounded">IDLE</span>
-                </div>
-                <div class="flex-1 py-4 flex items-center justify-center">
-                  <span class="material-symbols-outlined text-outline-variant text-4xl">check_circle</span>
-                </div>
-                <div class="flex justify-center font-label-caps text-label-caps">
-                  <span class="opacity-40">WAITING ASSIGNMENT</span>
-                </div>
-              </div>
-
-              {/* Bay 4 */}
-              <div class="bg-white border border-outline-variant p-4 flex flex-col gap-4 shadow-sm relative">
-                <div class="flex justify-between items-start">
-                  <div>
-                    <p class="font-label-caps text-label-caps text-on-surface-variant m-0 p-0">BAY 04</p>
-                    <h4 class="font-headline-md text-headline-md m-0 p-0">EXP_C9</h4>
-                  </div>
-                  <span class="bg-secondary-container text-on-secondary-container px-2 py-1 font-label-caps text-[10px] rounded">ACTIVE</span>
-                </div>
-                <div class="flex-1 py-4">
-                  <div class="h-24 w-full bg-surface-container-low rounded relative overflow-hidden">
-                    <div class="absolute inset-0 bg-secondary/5 flex items-center justify-center">
-                      <span class="material-symbols-outlined text-secondary text-opacity-30 text-5xl">conveyor_belt</span>
+                    <div class="flex-1 py-4 flex items-center justify-center bg-surface-container-low rounded">
+                      <div class="text-center">
+                        <span class="font-data-display text-4xl text-primary">{total}</span>
+                        <span class="block font-label-caps text-[10px] opacity-60">TRUCKS</span>
+                      </div>
                     </div>
-                    <div class="absolute bottom-0 left-0 h-1 bg-secondary" style={{width: '25%'}}></div>
                   </div>
-                </div>
-                <div class="flex justify-between font-label-caps text-label-caps">
-                  <span class="opacity-60">OFFLOADING</span>
-                  <span class="text-secondary font-bold">25%</span>
-                </div>
-              </div>
+                );
+              })}
 
-              {/* Row of 4 more bays simplified */}
-              <div class="bg-white border border-outline-variant p-4 flex flex-col gap-4 shadow-sm">
-                <p class="font-label-caps text-label-caps text-on-surface-variant m-0 p-0">BAY 05</p>
-                <h4 class="font-headline-md text-headline-md m-0 p-0">READY</h4>
-                <div class="h-1 bg-surface-container-highest w-full rounded-full mt-4"></div>
-              </div>
-              <div class="bg-white border border-outline-variant p-4 flex flex-col gap-4 shadow-sm">
-                <p class="font-label-caps text-label-caps text-on-surface-variant m-0 p-0">BAY 06</p>
-                <h4 class="font-headline-md text-headline-md m-0 p-0">INSP_1</h4>
-                <div class="h-1 bg-secondary w-1/2 rounded-full mt-4"></div>
-              </div>
-              <div class="bg-white border border-outline-variant p-4 flex flex-col gap-4 shadow-sm">
-                <p class="font-label-caps text-label-caps text-on-surface-variant m-0 p-0">BAY 07</p>
-                <h4 class="font-headline-md text-headline-md m-0 p-0">LOAD_Z2</h4>
-                <div class="h-1 bg-secondary w-full rounded-full mt-4"></div>
-              </div>
-              <div class="bg-white border border-outline-variant p-4 flex flex-col gap-4 shadow-sm">
-                <p class="font-label-caps text-label-caps text-on-surface-variant m-0 p-0">BAY 08</p>
-                <h4 class="font-headline-md text-headline-md m-0 p-0">MAINT</h4>
-                <div class="h-1 bg-tertiary-container w-full rounded-full mt-4"></div>
-              </div>
+              {/* Right Wing Bays */}
+              {[72, 71, 70, 69, 68].map(bay => {
+                const isLoading = bay === 70;
+                const bayLogs = logs.filter(l => l.bay === String(bay));
+                const total = bayLogs.length;
+                
+                return (
+                  <div key={bay} class="bg-white border border-outline-variant p-4 flex flex-col gap-4 shadow-sm relative overflow-hidden">
+                    <div class="flex justify-between items-start">
+                      <div>
+                        <p class="font-label-caps text-label-caps text-on-surface-variant m-0 p-0">RIGHT WING</p>
+                        <h4 class="font-headline-md text-headline-md m-0 p-0">BAY {bay}</h4>
+                      </div>
+                      {isLoading ? (
+                        <span class="bg-tertiary-container text-on-tertiary-container px-2 py-1 font-label-caps text-[10px] rounded">LOADING</span>
+                      ) : (
+                        <span class="bg-outline-variant bg-opacity-20 text-on-surface-variant px-2 py-1 font-label-caps text-[10px] rounded">UNLOADING</span>
+                      )}
+                    </div>
+                    <div class="flex-1 py-4 flex items-center justify-center bg-surface-container-low rounded">
+                      <div class="text-center">
+                        {isLoading ? (
+                          <span class="material-symbols-outlined text-outline-variant text-4xl">output</span>
+                        ) : (
+                          <>
+                            <span class="font-data-display text-4xl text-primary">{total}</span>
+                            <span class="block font-label-caps text-[10px] opacity-60">TRUCKS</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </section>
 
             {/* Progress Bars for Schedule Windows */}

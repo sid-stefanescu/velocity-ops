@@ -1,9 +1,9 @@
 import { useState } from 'preact/hooks';
 import { Sidebar } from '../components/Sidebar';
 import { TopAppBar } from '../components/TopAppBar';
-import { truckLog, isSidebarOpen } from '../store';
+import { truckLog, isSidebarOpen, addBatch } from '../store';
 import type { TruckLogEntry } from '../store';
-import { setHours, setMinutes, addMinutes } from 'date-fns';
+import { setHours, setMinutes, addMinutes, format } from 'date-fns';
 
 const INTERVALS = [
   { label: '07:30 - 09:30', startH: 7, startM: 30 },
@@ -51,7 +51,7 @@ export function BatchEntry() {
     }
 
     if (newLogs.length > 0) {
-      truckLog.value = [...truckLog.value, ...newLogs];
+      addBatch(newLogs.map(l => ({ wing: l.wing, type: l.type, timestamp: l.timestamp })));
     }
 
     alert(`Successfully batched ${leftCount + rightCount} trucks for ${interval.label}`);
@@ -121,6 +121,39 @@ export function BatchEntry() {
                 LOG BATCH ENTRY
               </button>
             </form>
+
+            <div class="mt-12">
+              <h2 class="font-headline-sm text-headline-sm text-on-surface mb-4">Recent Batch Logs</h2>
+              <div class="bg-white border border-outline-variant rounded overflow-hidden shadow-sm">
+                <table class="w-full text-left border-collapse">
+                  <thead>
+                    <tr class="bg-surface-container-lowest border-b border-outline-variant">
+                      <th class="p-4 font-label-caps text-label-caps text-on-surface-variant">Time</th>
+                      <th class="p-4 font-label-caps text-label-caps text-on-surface-variant">Wing</th>
+                      <th class="p-4 font-label-caps text-label-caps text-on-surface-variant">Type</th>
+                      <th class="p-4 font-label-caps text-label-caps text-on-surface-variant">Bay</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {truckLog.value.slice(-15).reverse().map(log => (
+                      <tr key={log.id} class="border-b border-outline-variant last:border-0 hover:bg-surface-container-lowest transition-colors">
+                        <td class="p-4 font-body-md text-on-surface">{format(new Date(log.timestamp), 'MMM dd, HH:mm')}</td>
+                        <td class="p-4 font-body-md text-on-surface">{log.wing}</td>
+                        <td class="p-4 font-body-md text-on-surface">{log.type}</td>
+                        <td class="p-4 font-body-md text-on-surface-variant">{log.bay || '-'}</td>
+                      </tr>
+                    ))}
+                    {truckLog.value.length === 0 && (
+                      <tr>
+                        <td colSpan={4} class="p-8 text-center text-on-surface-variant font-body-md">
+                          No logs found
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         </main>
       </div>

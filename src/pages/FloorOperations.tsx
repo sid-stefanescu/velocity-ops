@@ -25,6 +25,8 @@ export function FloorOperations() {
   }, [])
 
   const logs = truckLog.value;
+  const target = targetTrucks.value;
+  const completed = trucksCompleted.value;
   const left = leftWingCount.value;
   const right = rightWingCount.value;
   
@@ -32,13 +34,13 @@ export function FloorOperations() {
     calculateSmoothedVelocity(logs, shiftSchedule.value, historicalAnchor.value, waveWeights.value, time), 
   [logs, shiftSchedule.value, historicalAnchor.value, waveWeights.value, time]);
 
-  const eta = useMemo(() => 
-    projectETA(targetTrucks.value - trucksCompleted.value, currentVelocity, shiftSchedule.value, time), 
-  [targetTrucks.value, trucksCompleted.value, currentVelocity, shiftSchedule.value, time]);
+  const etaDate = useMemo(() => 
+    projectETA(target - completed, currentVelocity, shiftSchedule.value, time), 
+  [target, completed, currentVelocity, shiftSchedule.value, time]);
 
   const { wir, status: wirStatus } = useMemo(() => calculateWIR(left, right, wirThresholds.value), [left, right, wirThresholds.value]);
   
-  const timeRem = eta ? Math.max(0, differenceInMinutes(eta, time)) : 0;
+  const timeRem = etaDate ? Math.max(0, differenceInMinutes(etaDate, time)) : 0;
 
   const truckWindows = useMemo(() => {
     const windows = [];

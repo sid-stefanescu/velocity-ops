@@ -1,96 +1,131 @@
-import { signal, effect, computed } from '@preact/signals';
+import { signal, computed, effect } from '@preact/signals';
 
 export type TruckLogEntry = {
   id: string;
-  timestamp: string; // ISO string
   wing: 'Left' | 'Right';
   type: 'Pallet' | 'Floor';
+  timestamp: string;
 };
 
 export type ShiftBlock = {
   id: string;
-  start: string; // HH:mm
-  end: string; // HH:mm
+  start: string;
+  end: string;
   teams: number;
 };
 
-// Default initial state
-const defaultShiftSchedule: ShiftBlock[] = [
-  { id: 'shift-1', start: '06:00', end: '13:00', teams: 2 },
-  { id: 'shift-2', start: '13:00', end: '15:00', teams: 7 },
-  { id: 'shift-3', start: '15:00', end: '23:59', teams: 5 },
+// Default Schedule (for fallback)
+export const defaultShiftSchedule: ShiftBlock[] = [
+  { id: 's1', start: '09:30', end: '11:30', teams: 14 },
+  { id: 's2', start: '12:00', end: '14:00', teams: 14 },
+  { id: 's3', start: '14:30', end: '16:30', teams: 14 },
+  { id: 's4', start: '17:00', end: '19:00', teams: 14 },
 ];
 
-const loadState = <T>(key: string, defaultValue: T): T => {
-  try {
-    const saved = localStorage.getItem(key);
-    return saved ? JSON.parse(saved) : defaultValue;
-  } catch (e) {
-    return defaultValue;
-  }
-};
-
 // Central Signals
-export const targetTrucks = signal<number>(loadState('targetTrucks', 145));
-export const historicalAnchor = signal<number>(loadState('historicalAnchor', 2.5));
-export const shiftSchedule = signal<ShiftBlock[]>(loadState('shiftSchedule', defaultShiftSchedule));
-export const truckLog = signal<TruckLogEntry[]>(loadState('truckLog', []));
-export const isSidebarOpen = signal<boolean>(loadState('isSidebarOpen', true));
+export const targetTrucks = signal<number>(145);
+export const historicalAnchor = signal<number>(2.5);
+export const shiftSchedule = signal<ShiftBlock[]>(defaultShiftSchedule);
+export const truckLog = signal<TruckLogEntry[]>([]);
+export const isSidebarOpen = signal<boolean>(true); // Keep in memory or localStorage for UI
 
 // WAVE Algo Settings
-export const waveWeights = signal<{w1: number, w2: number, w3: number}>(loadState('waveWeights', {w1: 0.6, w2: 0.3, w3: 0.1}));
-export const wirThresholds = signal<{warning: number, critical: number}>(loadState('wirThresholds', {warning: 0.20, critical: 0.35}));
+export const waveWeights = signal<{w1: number, w2: number, w3: number}>({w1: 0.6, w2: 0.3, w3: 0.1});
+export const wirThresholds = signal<{warning: number, critical: number}>({warning: 0.20, critical: 0.35});
 
 // Derived Signals
 export const trucksCompleted = computed(() => truckLog.value.length);
 export const leftWingCount = computed(() => truckLog.value.filter(t => t.wing === 'Left').length);
 export const rightWingCount = computed(() => truckLog.value.filter(t => t.wing === 'Right').length);
-
 export const activeTeams = computed(() => {
   const now = new Date();
-  const currentHours = now.getHours();
-  const currentMinutes = now.getMinutes();
-  const currentTimeStr = `${currentHours.toString().padStart(2, '0')}:${currentMinutes.toString().padStart(2, '0')}`;
-
+  const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  
   for (const block of shiftSchedule.value) {
-    if (currentTimeStr >= block.start && currentTimeStr < block.end) {
+    if (timeStr >= block.start && timeStr < block.end) {
       return block.teams;
     }
   }
-  return 0; // Default if outside schedule
+  return 0; // Break time
 });
 
-// Sync to LocalStorage
-effect(() => { localStorage.setItem('targetTrucks', JSON.stringify(targetTrucks.value)); });
-effect(() => { localStorage.setItem('historicalAnchor', JSON.stringify(historicalAnchor.value)); });
-effect(() => { localStorage.setItem('shiftSchedule', JSON.stringify(shiftSchedule.value)); });
-effect(() => { localStorage.setItem('truckLog', JSON.stringify(truckLog.value)); });
+// Sync isSidebarOpen to LocalStorage (pure UI state)
+const initSidebar = localStorage.getItem('isSidebarOpen');
+if (initSidebar) isSidebarOpen.value = JSON.parse(initSidebar);
 effect(() => { localStorage.setItem('isSidebarOpen', JSON.stringify(isSidebarOpen.value)); });
-effect(() => { localStorage.setItem('waveWeights', JSON.stringify(waveWeights.value)); });
-effect(() => { localStorage.setItem('wirThresholds', JSON.stringify(wirThresholds.value)); });
 
-// Cross-tab synchronization
-window.addEventListener('storage', (e) => {
-  if (e.key === 'targetTrucks' && e.newValue) targetTrucks.value = JSON.parse(e.newValue);
-  if (e.key === 'historicalAnchor' && e.newValue) historicalAnchor.value = JSON.parse(e.newValue);
-  if (e.key === 'shiftSchedule' && e.newValue) shiftSchedule.value = JSON.parse(e.newValue);
-  if (e.key === 'truckLog' && e.newValue) truckLog.value = JSON.parse(e.newValue);
-  if (e.key === 'isSidebarOpen' && e.newValue) isSidebarOpen.value = JSON.parse(e.newValue);
-  if (e.key === 'waveWeights' && e.newValue) waveWeights.value = JSON.parse(e.newValue);
-  if (e.key === 'wirThresholds' && e.newValue) wirThresholds.value = JSON.parse(e.newValue);
-});
-
-// Actions
-export const addTruck = (wing: 'Left' | 'Right', type: 'Pallet' | 'Floor') => {
-  const newEntry: TruckLogEntry = {
-    id: Date.now().toString() + Math.random().toString(36).substring(2, 9),
-    timestamp: new Date().toISOString(),
-    wing,
-    type,
-  };
-  truckLog.value = [...truckLog.value, newEntry];
+// Fetch State Polling Function
+const fetchState = async () => {
+  try {
+    const res = await fetch('/api/state');
+    const data = await res.json();
+    if (data.logs) truckLog.value = data.logs;
+    if (data.shifts && data.shifts.length > 0) shiftSchedule.value = data.shifts;
+    if (data.settings) {
+      targetTrucks.value = data.settings.targetTrucks;
+      historicalAnchor.value = data.settings.historicalAnchor;
+      waveWeights.value = { w1: data.settings.w1, w2: data.settings.w2, w3: data.settings.w3 };
+      wirThresholds.value = { warning: data.settings.wirWarning, critical: data.settings.wirCritical };
+    }
+  } catch (err) {
+    console.error('Failed to fetch state', err);
+  }
 };
 
-export const clearData = () => {
-  truckLog.value = [];
+// Initial fetch and start polling every 5 seconds
+if (typeof window !== 'undefined') {
+  fetchState();
+  setInterval(fetchState, 5000);
+}
+
+// Actions
+export const addTruck = async (wing: 'Left' | 'Right', type: 'Pallet' | 'Floor') => {
+  // Optimistic update for immediate UI response
+  const newEntry: TruckLogEntry = {
+    id: 'temp-' + Date.now(),
+    wing,
+    type,
+    timestamp: new Date().toISOString()
+  };
+  truckLog.value = [...truckLog.value, newEntry];
+
+  try {
+    await fetch('/api/truck', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ wing, type })
+    });
+    // Optional: could re-fetch state immediately here
+  } catch (err) {
+    console.error('Failed to add truck', err);
+  }
+};
+
+export const clearData = async () => {
+  truckLog.value = []; // Optimistic clear
+  try {
+    await fetch('/api/clear', { method: 'POST' });
+  } catch (err) {
+    console.error('Failed to clear data', err);
+  }
+};
+
+// Save Settings Action
+export const saveSettings = async (
+  shifts: ShiftBlock[], 
+  anchor: number, 
+  target: number, 
+  weights: {w1: number, w2: number, w3: number}, 
+  thresholds: {warning: number, critical: number}
+) => {
+  try {
+    await fetch('/api/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ shifts, anchor, target, weights, thresholds })
+    });
+    await fetchState(); // Refresh local state
+  } catch (err) {
+    console.error('Failed to save settings', err);
+  }
 };

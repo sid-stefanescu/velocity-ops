@@ -1,5 +1,5 @@
 import { useState } from 'preact/hooks';
-import { shiftSchedule, historicalAnchor, targetTrucks, clearData, waveWeights, wirThresholds } from '../store';
+import { shiftSchedule, historicalAnchor, targetTrucks, clearData, waveWeights, wirThresholds, saveSettings } from '../store';
 import type { ShiftBlock } from '../store';
 
 export function AdminSettings() {
@@ -9,12 +9,8 @@ export function AdminSettings() {
   const [weights, setWeights] = useState({...waveWeights.value});
   const [thresholds, setThresholds] = useState({...wirThresholds.value});
 
-  const handleSave = () => {
-    shiftSchedule.value = schedule;
-    historicalAnchor.value = anchor;
-    targetTrucks.value = target;
-    waveWeights.value = weights;
-    wirThresholds.value = thresholds;
+  const handleSave = async () => {
+    await saveSettings(schedule, anchor, target, weights, thresholds);
     alert('Settings Saved Successfully!');
   };
 

@@ -1,0 +1,37 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model TruckLog {
+  id        String   @id @default(cuid())
+  wing      String
+  type      String
+  timestamp DateTime @default(now())
+}
+
+model ShiftBlock {
+  id    String @id @default(cuid())
+  start String
+  end   String
+  teams Int
+}
+
+model Settings {
+  id               String @id @default("global")
+  targetTrucks     Int    @default(145)
+  historicalAnchor Float  @default(2.5)
+  
+  // Wave Weights
+  w1               Float  @default(0.6)
+  w2               Float  @default(0.3)
+  w3               Float  @default(0.1)
+
+  // WIR Thresholds
+  wirWarning       Float  @default(0.20)
+  wirCritical      Float  @default(0.35)
+}
